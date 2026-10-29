@@ -9,7 +9,7 @@ MQTT e alimenta um dashboard no Node-RED com alertas automáticos.
 | **1 — Edge** | *O que acontece com os dados quando a internet cai?* | Buffer local com limite justificado; descarta leituras normais antes de alertas; sincroniza em ordem quando a conexão volta |
 | **2 — Fog/Cloud** | *Como a equipe de saúde vê e é avisada?* | ESP32 → MQTT (HiveMQ) → Node-RED → Dashboard 2.0 com gráfico, gauge e notificação de alerta |
 
-🔌 **Projeto no Wokwi:** `<INSERIR LINK DO WOKWI>`
+🔌 **Projeto no Wokwi:** https://wokwi.com/projects/479248832316384257
 📄 **Relatórios:** [Parte 1 — Edge](docs/relatorio_parte1_edge.pdf) · [Parte 2 — Fog/Cloud](docs/relatorio_parte2_fog_cloud.pdf)
 
 ![Dashboard em alerta](docs/img/dashboard_alerta.png)
@@ -18,7 +18,18 @@ MQTT e alimenta um dashboard no Node-RED com alertas automáticos.
 
 ## Resultados medidos
 
-**Resiliência offline:** teste automatizado do próprio firmware ([`esp32/teste_host`](esp32/teste_host)), com buffer de 8 posições.
+**Resiliência offline no Wokwi** (rodada de 29/10/2026, buffer de demonstração com 30 posições,
+log em [`docs/evidencias/wokwi_serial.log`](docs/evidencias/wokwi_serial.log)):
+
+| Situação | Resultado |
+|---|---|
+| Alertas de taquicardia durante a queda | 4, todos preservados |
+| Leituras normais descartadas com o buffer cheio | 6 |
+| Alertas descartados | **0** |
+| Reconexão ao broker | 1ª tentativa |
+| Leituras sincronizadas na volta | **30**, em ordem |
+
+**Resiliência offline, teste automatizado** do próprio firmware ([`esp32/teste_host`](esp32/teste_host)), com buffer de 8 posições.
 
 | Situação simulada | Resultado |
 |---|---|
@@ -40,9 +51,9 @@ buffer e resume em uma notificação os alertas que aconteceram durante a queda.
 |---|---|
 | ![Offline](docs/img/dashboard_offline.png) | ![Sincronização](docs/img/dashboard_sincronizacao.png) |
 
-> Os prints do dashboard foram gerados com o [simulador](tools/simulador_esp32.py), que publica
-> o mesmo JSON do firmware com um roteiro controlado. O ESP32 do Wokwi publica no mesmo broker
-> e nos mesmos tópicos.
+> Prints da mesma rodada: o ESP32 do Wokwi publicando no HiveMQ e o Node-RED local recebendo.
+> No gráfico da direita, o 2º pico é a taquicardia que aconteceu **durante a queda**, enviada
+> do buffer e colocada no horário em que foi medida.
 
 ## Como rodar
 

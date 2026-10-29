@@ -137,8 +137,27 @@ alerta se perdeu. A ordem cronológica foi mantida e o buffer terminou vazio. Pa
 que o teste detecta erro de verdade, trocamos a política por "descarta sempre a mais
 antiga". O teste falhou (só 1 dos 4 alertas sobreviveu).
 
-**b) Simulação no Wokwi.** Pressionando o botão "Wi-Fi", o Monitor Serial mostra a mesma
-sequência `[OFFLINE]` → `[BUFFER] cheio` → `[SYNC] concluida`. Link do projeto: ver README.
+**b) Simulação no Wokwi** (projeto em modo demo, buffer de 30). Com o botão Wi-Fi desligamos a
+conexão, levamos o BPM a 180 por alguns segundos (4 leituras de taquicardia) e esperamos o
+buffer encher. Trecho do Monitor Serial (completo em `docs/evidencias/wokwi_serial.log`):
+
+```text
+[WIFI] simulado: DESLIGADO
+[MQTT] desconectado (Wi-Fi simulado desligado)
+[ALERTA] taquicardia (bpm=180 temp=36.5C)          (4 vezes)
+[OFFLINE] armazenada localmente (30/30)
+[BUFFER] cheio (30/30): descartada leitura NORMAL seq=41; alertas preservados=4
+...
+[WIFI] simulado: LIGADO
+[MQTT] conectado como cardioia-P001-c40a24
+[SYNC] iniciando: 30 pendentes
+[SYNC] concluida: 30 enviadas; descartadas acumuladas: normais=6 alertas=0; buffer limpo
+```
+
+![Wokwi com o buffer cheio, LED azul apagado](img/wokwi_offline.png)
+
+O resultado repete o do teste automatizado: os alertas ficaram, só leituras normais saíram e
+o buffer foi sincronizado inteiro quando a conexão voltou.
 
 ### 6. Sobre o SPIFFS
 

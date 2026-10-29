@@ -382,8 +382,9 @@ void setup() {
   WiFi.begin("Wokwi-GUEST", "", 6);   // canal 6 acelera a conexão no Wokwi
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
   mqtt.setBufferSize(512);
-  // connect() é bloqueante: limita a espera para não segurar o loop (e as leituras) por muito tempo
-  mqtt.setSocketTimeout(2);
+  // connect() é bloqueante e espera a resposta do broker por até 10 s. Com 2 s, a
+  // reconexão falhava sempre no Wokwi (estado -4, timeout), medido em 29/10/2026.
+  mqtt.setSocketTimeout(10);
   Serial.println("[WIFI] conectando a Wokwi-GUEST ...");
 #endif
 }

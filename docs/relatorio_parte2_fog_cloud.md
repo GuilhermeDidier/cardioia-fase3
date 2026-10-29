@@ -88,10 +88,11 @@ vez, sem confirmação do broker. Compensamos isso em três pontos:
    limpa não dispara a Last Will.
 
 **Reconexão.** Com o Wi-Fi simulado ligado e o broker desconectado, o firmware tenta de novo
-5 s depois do fim da tentativa anterior. O `connect()` do PubSubClient é bloqueante. Por
-isso, limitamos a espera pela resposta do broker a 2 s (`setSocketTimeout`). Com o broker
-fora do ar, uma leitura pode atrasar alguns segundos, mas nenhuma se perde: o que for lido
-nesse meio-tempo vai para o buffer.
+5 s depois do fim da tentativa anterior. O `connect()` do PubSubClient é bloqueante e espera a
+resposta do broker por até 10 s (`setSocketTimeout`). Testamos 2 s, e no Wokwi toda
+reconexão falhava por timeout (estado -4); com 10 s, reconectou de primeira. O custo é que,
+com o broker fora do ar, o `loop()` fica parado até 10 s a cada tentativa e as leituras
+atrasam. Nenhuma se perde: o que for lido nesse meio-tempo vai para o buffer.
 
 ### 3. Segurança e LGPD
 
@@ -155,31 +156,53 @@ flow está em `node-red/flows.json`, e as instruções para importar estão no R
 
 ### 5. Evidências
 
-As imagens do dashboard abaixo foram geradas com o `tools/simulador_esp32.py`, que publica
-no broker **exatamente** o formato do firmware, com roteiro controlado (normal → alerta;
-online → queda → sincronização). Escolhemos o simulador para que os prints mostrassem cada
-situação de forma reproduzível. O envio pelo ESP32 real no Wokwi aparece na seção 5.4.
+Todas as imagens desta seção vêm de **uma mesma rodada, em 29/10/2026**: o ESP32 do projeto
+Wokwi publicando no `broker.hivemq.com` e o Node-RED local assinando os mesmos tópicos. O
+roteiro durou cerca de 3 minutos: operação normal, potenciômetro no máximo (taquicardia),
+DHT22 a 39 °C (febre), queda de conexão pelo botão Wi-Fi com nova taquicardia durante a queda,
+buffer cheio e volta da conexão. O log do Monitor Serial está em
+`docs/evidencias/wokwi_serial.log` e o que passou pelo broker, em
+`docs/evidencias/broker_mqtt.log`.
 
-**5.1 Alerta em tempo real.** O BPM passa de 120 e a temperatura de 38 °C: a faixa fica
-vermelha, o gauge entra na zona vermelha e a notificação aparece.
+**5.1 ESP32 no Wokwi em alerta.** O potenciômetro no máximo leva o BPM a 180: o Serial mostra
+`[ALERTA] taquicardia`, cada envio sai com `"alerta":true` e o LED vermelho acende.
+
+![Wokwi em alerta](img/wokwi_alerta.png)
+
+**5.2 Alerta no dashboard.** A mesma leitura chega ao Node-RED: a faixa fica vermelha, o
+gráfico sobe e a notificação aparece na transição para alerta.
 
 ![Dashboard em alerta](img/dashboard_alerta.png)
 
-**5.2 Queda de conexão.** O dispositivo publica `online:false` e o painel "Dispositivo" fica
-laranja. O gráfico para de receber pontos.
+A febre (DHT22 a 39 °C) aparece do mesmo jeito, com o gauge na zona vermelha:
 
-![Dashboard com dispositivo offline](img/dashboard_offline.png)
+![Dashboard com febre](img/dashboard_febre.png)
 
-**5.3 Volta da conexão.** As 20 leituras guardadas chegam em rajada e preenchem o buraco do
-gráfico no horário em que foram medidas, incluindo o pico de taquicardia que aconteceu
-offline. A notificação laranja resume os 4 alertas da queda.
+A "escada" depois de cada pico no gráfico é o potenciômetro voltando: ele foi girado pelo
+teclado, uma unidade por vez, e passou por 40 bpm no caminho.
+
+**5.3 Queda de conexão.** Com o botão Wi-Fi, o ESP32 publica `online:false` antes de
+desconectar e o painel "Dispositivo" fica laranja. No Wokwi, o LED azul apaga, as leituras
+vão para o buffer e, com ele cheio, o Serial mostra o descarte de leituras normais com os 4
+alertas preservados.
+
+![Wokwi offline com buffer cheio](img/wokwi_offline.png)
+
+![Dashboard com o dispositivo offline](img/dashboard_offline.png)
+
+**5.4 Volta da conexão.** O ESP32 reconecta, sincroniza as 30 leituras do buffer
+(`[SYNC] concluida: 30 enviadas; descartadas acumuladas: normais=6 alertas=0`) e volta ao
+tempo real. No dashboard, as leituras sincronizadas preenchem o buraco no horário em que
+foram medidas, incluindo o pico de taquicardia que aconteceu durante a queda. A notificação
+laranja resume os 4 alertas da queda, e o painel mostra 6 normais e 0 alertas descartados.
+
+![Wokwi depois da sincronização](img/wokwi_sync.png)
 
 ![Dashboard depois da sincronização](img/dashboard_sincronizacao.png)
 
-**5.4 ESP32 no Wokwi publicando no broker.** <!-- PRINT DO WOKWI: Monitor Serial com [MQTT] conectado e [NUVEM] + dashboard recebendo -->
-
 O painel também funciona no celular (grade de 3 colunas abaixo de 576 px):
-`img/dashboard_celular.png`.
+`img/dashboard_celular.png`, gerado com o simulador `tools/simulador_esp32.py`, que publica o
+mesmo formato do firmware.
 
 ### 6. Como reproduzir
 

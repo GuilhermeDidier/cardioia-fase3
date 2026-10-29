@@ -23,7 +23,7 @@ th { background: #f6f8fa; }
 code { font-family: Menlo, monospace; font-size: 8.8pt; background: #f6f8fa; padding: 0 2pt; }
 pre { background: #f6f8fa; padding: 8pt; font-size: 8.3pt; white-space: pre-wrap; word-break: break-all; }
 pre code { padding: 0; }
-img { max-width: 100%; border: 1px solid #d0d7de; margin: 4pt 0; }
+img { max-width: 100%; max-height: 110mm; border: 1px solid #d0d7de; margin: 4pt 0; }
 .mermaid { text-align: center; margin: 8pt 0; }
 hr { border: 0; border-top: 1px solid #ddd; }
 h3, table, pre, img, .mermaid { break-inside: avoid; }
