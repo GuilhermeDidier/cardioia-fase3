@@ -7,4 +7,7 @@ set -e
 cd "$(dirname "$0")"
 ARDUINOJSON="${ARDUINOJSON:-$(arduino-cli config get directories.user)/libraries/ArduinoJson/src}"
 c++ -std=c++17 -Wall -Istubs -I../cardioia_monitor -I"$ARDUINOJSON" teste_resiliencia.cpp -o /tmp/cardioia_teste_host
-/tmp/cardioia_teste_host | grep -v '^\[STATUS\]'
+status=0
+/tmp/cardioia_teste_host > /tmp/cardioia_teste_host.log || status=$?
+grep -v '^\[STATUS\]' /tmp/cardioia_teste_host.log
+exit $status

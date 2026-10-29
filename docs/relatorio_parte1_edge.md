@@ -66,8 +66,9 @@ flowchart LR
 4. **Offline.** A leitura vai para o buffer local: `[OFFLINE] armazenada localmente (5/30)`.
 5. **Volta da conexão.** O buffer é enviado do mais antigo para o mais novo, em lotes de 10
    por volta do `loop()`, para não travar a leitura dos sensores. **Cada registro só é
-   apagado do buffer depois que o envio é aceito.** Se um envio falha, o registro fica para
-   a próxima tentativa.
+   apagado do buffer depois que o `publish()` é aceito pela conexão.** Se o envio falha, o
+   registro fica para a próxima tentativa. Com QoS 0 não há confirmação do broker; a seção 2
+   do relatório da Parte 2 discute esse limite.
 
 Enquanto houver pendências, a leitura nova entra no fim da fila em vez de passar na frente.
 Assim, a nuvem recebe tudo em ordem cronológica.

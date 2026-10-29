@@ -220,7 +220,7 @@ String motivo(const Leitura& l) {
 // Envio para a nuvem
 // ---------------------------------------------------------------------------
 
-// Monta o JSON e envia. Retorna true só se o envio foi aceito; o chamador
+// Monta o JSON e envia. Retorna true só se o publish() foi aceito pela conexão; o chamador
 // usa isso para decidir se pode apagar o registro do buffer.
 bool enviar(const Leitura& l, const char* origem) {
   JsonDocument doc;
@@ -271,7 +271,7 @@ void sincronizar() {
       Serial.println("[SYNC] envio falhou; registro mantido no buffer para nova tentativa");
       return;
     }
-    bufferRemover(0);   // "apaga o local" só depois do envio confirmado
+    bufferRemover(0);   // "apaga o local" só depois que o publish() foi aceito (QoS 0: sem confirmação do broker)
     enviadasNaSync++;
   }
   if (tamanho == 0) {
@@ -330,7 +330,6 @@ void manterConexao() {
   }
   if (WiFi.status() != WL_CONNECTED || mqtt.connected()) return;
   if (millis() - ultimaTentativaMqttMs < INTERVALO_RECONEXAO_MS && ultimaTentativaMqttMs != 0) return;
-  ultimaTentativaMqttMs = millis();
   Serial.printf("[MQTT] conectando a %s:%u ...\n", MQTT_HOST, MQTT_PORT);
   // Last Will: se o dispositivo cair sem avisar, o broker publica offline por ele
   if (mqtt.connect(clientId, TOPICO_STATUS, 0, true, "{\"online\":false,\"motivo\":\"lwt\"}")) {
@@ -339,6 +338,7 @@ void manterConexao() {
     Serial.printf("[MQTT] falha (estado %d); nova tentativa em %lus\n", mqtt.state(),
                   (unsigned long)(INTERVALO_RECONEXAO_MS / 1000));
   }
+  ultimaTentativaMqttMs = millis();   // o intervalo conta a partir do fim da tentativa
 #endif
 }
 
@@ -382,6 +382,8 @@ void setup() {
   WiFi.begin("Wokwi-GUEST", "", 6);   // canal 6 acelera a conexão no Wokwi
   mqtt.setServer(MQTT_HOST, MQTT_PORT);
   mqtt.setBufferSize(512);
+  // connect() é bloqueante: limita a espera para não segurar o loop (e as leituras) por muito tempo
+  mqtt.setSocketTimeout(2);
   Serial.println("[WIFI] conectando a Wokwi-GUEST ...");
 #endif
 }
@@ -406,7 +408,10 @@ void loop() {
       Serial.printf("[LEITURA] seq=%lu temp=%.1fC umid=%u%% bpm=%u estado=%s\n", (unsigned long)l.seq,
                     l.temp_x10 / 10.0, l.umid, l.bpm, ultimaLeituraAlerta ? "ALERTA" : "NORMAL");
     }
-    if (ultimaLeituraAlerta) Serial.printf("[ALERTA] %s (bpm=%u temp=%.1fC)\n", motivo(l).c_str(), l.bpm, l.temp_x10 / 10.0);
+    if (ultimaLeituraAlerta) {
+      if (l.flags & FLAG_ERRO_SENSOR) Serial.printf("[ALERTA] %s (bpm=%u temp=ERRO)\n", motivo(l).c_str(), l.bpm);
+      else Serial.printf("[ALERTA] %s (bpm=%u temp=%.1fC)\n", motivo(l).c_str(), l.bpm, l.temp_x10 / 10.0);
+    }
 
     // Com dados pendentes, a leitura nova entra no fim da fila para manter a ordem de envio
     if (online && tamanho == 0) {

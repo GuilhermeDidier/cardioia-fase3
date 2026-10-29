@@ -52,8 +52,10 @@ rede `Wokwi-GUEST`, que dá acesso de saída à internet.
 | `cardioia/fase3/g568457/paciente/P001/alertas` | só as leituras em alerta | não |
 | `cardioia/fase3/g568457/paciente/P001/status` | estado do dispositivo, a cada 10 s e a cada mudança | **sim** |
 
-O Node-RED assina `cardioia/fase3/g568457/paciente/+/leituras`. O `+` aceita qualquer
-paciente, então o mesmo flow serve para outros dispositivos.
+O Node-RED assina exatamente os tópicos do paciente `P001`. Não usamos o curinga
+`paciente/+/...`: como o painel é de um único paciente, ele misturaria dados de outros
+dispositivos, e no broker público aceitaria leituras publicadas por qualquer pessoa em outro
+"paciente".
 
 **Payload de leitura** (JSON, ~170 bytes):
 
@@ -75,7 +77,10 @@ paciente, então o mesmo flow serve para outros dispositivos.
 **Confiabilidade.** O `PubSubClient` só publica com QoS 0: a mensagem é entregue no máximo uma
 vez, sem confirmação do broker. Compensamos isso em três pontos:
 
-1. O buffer só apaga um registro quando o `publish()` retorna sucesso.
+1. O buffer só apaga um registro quando o `publish()` retorna sucesso. Isso garante que a
+   mensagem foi entregue à conexão TCP, não que chegou ao broker: se a conexão cair no meio
+   da sincronização sem aviso, um lote pode se perder. QoS 1 (com confirmação) exigiria uma
+   biblioteca que publique em QoS 1, como `esp-mqtt` ou `AsyncMqttClient`.
 2. O `seq` torna as lacunas visíveis do lado de quem recebe.
 3. O dispositivo registra uma **Last Will** no tópico de status (`{"online":false,"motivo":"lwt"}`):
    se cair sem avisar, o broker publica o offline em nome dele. Ao desligar o Wi-Fi pelo
@@ -83,8 +88,10 @@ vez, sem confirmação do broker. Compensamos isso em três pontos:
    limpa não dispara a Last Will.
 
 **Reconexão.** Com o Wi-Fi simulado ligado e o broker desconectado, o firmware tenta de novo
-a cada 5 s, sem bloquear o `loop()`. A leitura dos sensores continua normalmente, e o que
-for lido nesse meio-tempo vai para o buffer.
+5 s depois do fim da tentativa anterior. O `connect()` do PubSubClient é bloqueante. Por
+isso, limitamos a espera pela resposta do broker a 2 s (`setSocketTimeout`). Com o broker
+fora do ar, uma leitura pode atrasar alguns segundos, mas nenhuma se perde: o que for lido
+nesse meio-tempo vai para o buffer.
 
 ### 3. Segurança e LGPD
 
@@ -111,7 +118,8 @@ de `cardioia/#`. Para produção, mudaríamos:
 
 ### 4. Node-RED: fluxo e dashboard
 
-Rodamos o Node-RED 5 localmente com o **Dashboard 2.0** (`@flowfuse/node-red-dashboard`), o
+Rodamos o Node-RED 5 localmente, aceitando conexões só da própria máquina
+(`uiHost: 127.0.0.1`, porque o editor não tem login), com o **Dashboard 2.0** (`@flowfuse/node-red-dashboard`), o
 sucessor oficial do `node-red-dashboard` antigo, que está marcado como sem manutenção. O
 flow está em `node-red/flows.json`, e as instruções para importar estão no README.
 
@@ -119,7 +127,7 @@ flow está em `node-red/flows.json`, e as instruções para importar estão no R
 
 | Nó | Tipo | O que faz |
 |---|---|---|
-| `leituras` | mqtt in | Assina `.../+/leituras` e converte o JSON |
+| `leituras` | mqtt in | Assina `.../P001/leituras` e converte o JSON |
 | `normaliza (horário + série)` | function | Calcula o horário real (`agora − idade_ms`), conta as leituras vindas do buffer e mantém a série de BPM ordenada por horário |
 | `Gráfico BPM` | ui-chart | Linha, eixo X em tempo, janela de 15 min |
 | `Gauge temperatura` | ui-gauge | Meia-lua de 34 a 42 °C. Faixas: azul < 35, verde 35–37,5, amarelo 37,5–38, vermelho > 38 |
@@ -127,7 +135,7 @@ flow está em `node-red/flows.json`, e as instruções para importar estão no R
 | `avalia alerta (limiares)` | function | Reaplica os limiares (120/50 bpm, 38/35 °C) e avisa se discordar do ESP32 |
 | `só a leitura mais recente` | function | Impede que uma leitura antiga, chegando do buffer, sobrescreva o estado atual |
 | `Estado do paciente` | ui-template | Faixa verde "Sinais vitais normais" ou vermelha "ALERTA — taquicardia" |
-| `quando notificar` | function | Avisa só quando o estado muda e resume em uma notificação os alertas ocorridos offline |
+| `quando notificar` | function | Avisa só quando o estado muda e resume em uma notificação os alertas ocorridos offline (se a sincronização for interrompida, o resumo sai na primeira leitura em tempo real) |
 | `Notificação de alerta` | ui-notification | Aviso vermelho (alerta), verde (normalizou) ou laranja (alertas da queda) |
 | `status` → `Dispositivo` | mqtt in → ui-template | Online/offline, ocupação do buffer, leituras sincronizadas e descartes |
 

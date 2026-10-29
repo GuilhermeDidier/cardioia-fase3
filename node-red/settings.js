@@ -2,6 +2,8 @@
 // Rodar a partir desta pasta: npm install && npm start
 module.exports = {
     uiPort: process.env.PORT || 1880,
+    // Editor e Admin API sem login: só aceitam conexões desta máquina
+    uiHost: "127.0.0.1",
     flowFile: "flows.json",
     flowFilePretty: true,
     // Sem credenciais no flow (broker público), então não há segredo a cifrar
