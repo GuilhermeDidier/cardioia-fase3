@@ -29,6 +29,7 @@ img { max-width: 100%; max-height: 110mm; border: 1px solid #d0d7de; margin: 4pt
 hr { border: 0; border-top: 1px solid #ddd; }
 h3, table, pre, img, .mermaid { break-inside: avoid; }
 h3, h4 { break-after: avoid; }
+p, li { orphans: 3; widows: 3; }
 p:has(+ table), p:has(+ pre) { break-after: avoid; }
 table.fotos td { border: none; padding: 2pt; width: 50%; vertical-align: top; }
 table.fotos img { max-height: 95mm; }

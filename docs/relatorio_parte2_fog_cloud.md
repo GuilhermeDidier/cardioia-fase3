@@ -162,9 +162,10 @@ flow está em `node-red/flows.json`, e as instruções para importar estão no R
   diferença, e um substituía o outro.
 - **Lacunas visíveis.** Se duas leituras consecutivas estão a mais de 6 s uma da outra
   (3 leituras perdidas), o gráfico mostra um buraco em vez de ligar os pontos com uma reta.
-- **Horário de Brasília em tudo.** As horas das notificações (geradas no Node-RED) e as da
+- **Horário de Brasília nos textos.** As horas das notificações (geradas no Node-RED) e as da
   faixa de estado (geradas no navegador) usam o fuso `America/Sao_Paulo`, para não divergirem
-  se o Node-RED rodar num servidor em UTC.
+  se o Node-RED rodar num servidor em UTC. O eixo do gráfico segue o fuso do navegador de quem
+  abre o painel.
 
 ### 5. Evidências
 
@@ -212,7 +213,10 @@ O ESP32 reconecta e sincroniza o buffer (`[SYNC] iniciando: 30 pendentes` →
 leitura feita durante a própria sincronização, que entrou no fim da fila. No dashboard, as
 leituras sincronizadas preenchem o buraco no horário em que foram medidas, incluindo o pico
 de taquicardia que aconteceu durante a queda. A notificação laranja resume os alertas que
-vieram do buffer, e o aviso azul confirma que o dispositivo voltou.
+vieram do buffer, e o aviso azul confirma que o dispositivo voltou. Esse aviso fala em 21
+leituras no buffer, e não 30, porque o status `online:true` sai no fim da primeira volta do
+`loop()` depois da reconexão, quando o primeiro lote de 10 já foi enviado e uma leitura nova
+entrou na fila.
 
 O painel "Dispositivo" mostra **32** sincronizadas, e não 31: o contador é do ESP32, desde o
 boot. A leitura extra é a primeira do boot, feita antes de o MQTT conectar, que ficou no

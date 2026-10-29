@@ -31,7 +31,7 @@ log em [`docs/evidencias/wokwi_serial.log`](docs/evidencias/wokwi_serial.log)):
 | Alertas descartados | **0** |
 | Reconexão ao broker | 1ª tentativa |
 | Descartes entre a reconexão e o fim da sincronização | **0** |
-| Leituras sincronizadas na volta | **31**, em ordem (30 pendentes + 1 lida durante a sincronização) |
+| Leituras sincronizadas na volta | **31**, em ordem (30 pendentes + 1 lida durante a sincronização). O painel mostra 32 porque conta desde o boot: a 1ª leitura ficou no buffer até o MQTT conectar |
 | Alertas exercitados na rodada | taquicardia, bradicardia e febre |
 
 **Resiliência offline, teste automatizado** do próprio firmware ([`esp32/teste_host`](esp32/teste_host)), com buffer de 8 posições.

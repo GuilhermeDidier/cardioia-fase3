@@ -33,7 +33,8 @@ minuto. Um potenciômetro permite levar o valor a 130 bpm, ou a 45, e mostrar o 
 hora, sem depender do ritmo de quem aperta. **Por que o GPIO 34:** ele pertence ao ADC1. O
 ADC2 do ESP32 fica indisponível quando o Wi-Fi está ligado. **O botão** fica com o *bounce*
 mecânico simulado pelo Wokwi ligado, e o firmware filtra com debounce de 50 ms: na rodada de
-testes, cada clique alternou o estado uma única vez.
+testes documentada, feita com este circuito, os dois cliques no botão geraram exatamente um
+`[WIFI] simulado: DESLIGADO` e um `LIGADO`.
 
 ### 3. Fluxo de funcionamento
 
@@ -82,8 +83,8 @@ Assim, a nuvem recebe tudo em ordem cronológica.
 **Estrutura.** É um buffer circular estático de registros de 16 bytes (sequência, instante
 da leitura, temperatura × 10, umidade, BPM e flags). O buffer é um vetor de tamanho fixo,
 reservado na compilação: ele não usa o heap e não fragmenta a memória num dispositivo que
-deveria rodar por semanas. A montagem de cada mensagem JSON usa o heap de forma temporária
-(ArduinoJson) e libera tudo ao fim do envio.
+deveria rodar por semanas. A montagem de cada mensagem (o JSON, via ArduinoJson, e o texto do
+motivo do alerta) usa o heap de forma temporária e libera tudo ao fim do envio.
 
 #### Limite de armazenamento e por quê
 
@@ -133,7 +134,8 @@ Trecho do log (completo em `docs/evidencias/teste_resiliencia_host.log`):
 ...
 [WIFI] simulado: LIGADO
 [SYNC] iniciando: 8 pendentes
-[NUVEM] {"seq":6,"idade_ms":22000,...,"bpm":176,"alerta":true,"motivo":"taquicardia","origem":"buffer","buffer_pendente":7}
+[NUVEM] {"seq":6,"idade_ms":22000,...,"bpm":176,"alerta":true,
+         "motivo":"taquicardia","origem":"buffer","buffer_pendente":7}
 ...
 [SYNC] concluida: 8 enviadas; descartadas acumuladas: normais=6 alertas=0; buffer limpo
 ==== VERIFICACOES ====
