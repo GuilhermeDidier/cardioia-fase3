@@ -1,0 +1,618 @@
+[
+    {
+        "id": "tab_cardioia",
+        "type": "tab",
+        "label": "CardioIA Fase 3",
+        "disabled": false,
+        "info": "ESP32 (Wokwi) → MQTT (broker.hivemq.com) → Node-RED → Dashboard 2.0 em /dashboard"
+    },
+    {
+        "id": "broker_hivemq",
+        "type": "mqtt-broker",
+        "name": "HiveMQ público",
+        "broker": "broker.hivemq.com",
+        "port": "1883",
+        "clientid": "",
+        "autoConnect": true,
+        "usetls": false,
+        "protocolVersion": "4",
+        "keepalive": "60",
+        "cleansession": true,
+        "autoUnsubscribe": true,
+        "birthTopic": "",
+        "closeTopic": "",
+        "willTopic": "",
+        "birthQos": "0",
+        "closeQos": "0",
+        "willQos": "0",
+        "birthPayload": "",
+        "closePayload": "",
+        "willPayload": "",
+        "userProps": "",
+        "sessionExpiry": ""
+    },
+    {
+        "id": "ui_base",
+        "type": "ui-base",
+        "name": "CardioIA",
+        "path": "/dashboard",
+        "appIcon": "",
+        "includeClientData": true,
+        "acceptsClientConfig": [
+            "ui-notification",
+            "ui-control"
+        ],
+        "showPathInSidebar": false,
+        "headerContent": "page",
+        "navigationStyle": "default",
+        "titleBarStyle": "default",
+        "showReconnectNotification": true,
+        "notificationDisplayTime": 1,
+        "showDisconnectNotification": true,
+        "allowInstall": false
+    },
+    {
+        "id": "ui_theme",
+        "type": "ui-theme",
+        "name": "Tema CardioIA",
+        "colors": {
+            "surface": "#b71c1c",
+            "primary": "#c62828",
+            "bgPage": "#f4f6f8",
+            "groupBg": "#ffffff",
+            "groupOutline": "#d9d9e0"
+        },
+        "sizes": {
+            "density": "default",
+            "pagePadding": "12px",
+            "groupGap": "12px",
+            "groupBorderRadius": "6px",
+            "widgetGap": "12px"
+        }
+    },
+    {
+        "id": "ui_page",
+        "type": "ui-page",
+        "name": "Paciente P001",
+        "ui": "ui_base",
+        "path": "/paciente",
+        "icon": "heart-pulse",
+        "layout": "grid",
+        "theme": "ui_theme",
+        "breakpoints": [
+            {
+                "name": "Default",
+                "px": 0,
+                "cols": 3
+            },
+            {
+                "name": "Tablet",
+                "px": 576,
+                "cols": 6
+            },
+            {
+                "name": "Small Desktop",
+                "px": 768,
+                "cols": 9
+            },
+            {
+                "name": "Desktop",
+                "px": 1024,
+                "cols": 12
+            }
+        ],
+        "order": 1,
+        "className": "",
+        "visible": "true",
+        "disabled": "false"
+    },
+    {
+        "id": "grp_estado",
+        "type": "ui-group",
+        "name": "Estado do paciente",
+        "page": "ui_page",
+        "width": "8",
+        "height": "1",
+        "order": 1,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "grp_disp",
+        "type": "ui-group",
+        "name": "Dispositivo (edge)",
+        "page": "ui_page",
+        "width": "4",
+        "height": "1",
+        "order": 2,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "grp_bpm",
+        "type": "ui-group",
+        "name": "Frequência cardíaca",
+        "page": "ui_page",
+        "width": "8",
+        "height": "1",
+        "order": 3,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "grp_amb",
+        "type": "ui-group",
+        "name": "Temperatura e umidade",
+        "page": "ui_page",
+        "width": "4",
+        "height": "1",
+        "order": 4,
+        "showTitle": true,
+        "className": "",
+        "visible": "true",
+        "disabled": "false",
+        "groupType": "default"
+    },
+    {
+        "id": "cmt_1",
+        "type": "comment",
+        "z": "tab_cardioia",
+        "name": "Leituras do ESP32: normaliza horário → gráfico, gauges, avaliação de alerta",
+        "info": "",
+        "x": 370,
+        "y": 40,
+        "wires": []
+    },
+    {
+        "id": "in_leituras",
+        "type": "mqtt in",
+        "z": "tab_cardioia",
+        "name": "leituras",
+        "topic": "cardioia/fase3/g568457/paciente/+/leituras",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "broker_hivemq",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 120,
+        "y": 140,
+        "wires": [
+            [
+                "fn_normaliza",
+                "dbg_leituras"
+            ]
+        ]
+    },
+    {
+        "id": "fn_normaliza",
+        "type": "function",
+        "z": "tab_cardioia",
+        "name": "normaliza (horário + série)",
+        "func": "// O ESP32 não tem relógio: cada leitura traz há quanto tempo foi feita\n// (idade_ms). Reconstruímos o horário real para que as leituras que\n// ficaram no buffer durante a queda apareçam no lugar certo do gráfico.\nconst p = msg.payload;\nif (!p || typeof p !== 'object' || typeof p.seq !== 'number' || typeof p.bpm !== 'number') {\n    node.warn('payload ignorado: ' + JSON.stringify(p));\n    return null;\n}\nconst agora = Date.now();\nconst ts = agora - (p.idade_ms || 0);\n\nif (p.origem === 'buffer') {\n    flow.set('sincronizadas', (flow.get('sincronizadas') || 0) + 1);\n}\n\n// Série de BPM ordenada por horário da leitura (janela de 15 min).\n// O gráfico recebe a série inteira (modo \"replace\"), então leituras\n// sincronizadas fora de ordem não viram zigue-zague.\nconst JANELA_MS = 15 * 60 * 1000;\nlet serie = flow.get('serieBpm') || [];\nserie.push({ x: ts, y: p.bpm });\nserie = serie.filter(pt => pt.x >= agora - JANELA_MS).sort((a, b) => a.x - b.x);\nflow.set('serieBpm', serie);\n\n// Gauges e painel mostram só a leitura mais recente, não a que chega atrasada do buffer\nconst maisRecente = ts >= (flow.get('ultimoTs') || 0);\nif (maisRecente) flow.set('ultimoTs', ts);\n\nreturn [\n    { topic: 'Frequência cardíaca', payload: serie },\n    maisRecente && p.temp !== null ? { payload: p.temp } : null,\n    maisRecente && p.umid !== null ? { payload: p.umid } : null,\n    { payload: { ...p, ts }, maisRecente }\n];",
+        "outputs": 4,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 140,
+        "wires": [
+            [
+                "chart_bpm"
+            ],
+            [
+                "gauge_temp"
+            ],
+            [
+                "gauge_umid"
+            ],
+            [
+                "fn_avalia"
+            ]
+        ]
+    },
+    {
+        "id": "chart_bpm",
+        "type": "ui-chart",
+        "z": "tab_cardioia",
+        "group": "grp_bpm",
+        "name": "Gráfico BPM",
+        "label": "Frequência cardíaca (bpm) — últimos 15 min",
+        "order": 1,
+        "chartType": "line",
+        "category": "topic",
+        "categoryType": "msg",
+        "xAxisLabel": "",
+        "xAxisProperty": "x",
+        "xAxisPropertyType": "property",
+        "xAxisType": "time",
+        "xAxisFormat": "",
+        "xAxisFormatType": "HH:mm:ss",
+        "xmin": "",
+        "xmax": "",
+        "yAxisLabel": "bpm",
+        "yAxisProperty": "y",
+        "yAxisPropertyType": "property",
+        "ymin": "30",
+        "ymax": "190",
+        "bins": 10,
+        "action": "replace",
+        "stackSeries": false,
+        "pointShape": "circle",
+        "pointRadius": 3,
+        "showLegend": false,
+        "removeOlder": "15",
+        "removeOlderUnit": "60",
+        "removeOlderPoints": "",
+        "colors": [
+            "#c62828",
+            "#1565c0",
+            "#ff7f0e",
+            "#2ca02c",
+            "#a347e1",
+            "#d62728",
+            "#ff9896",
+            "#9467bd",
+            "#c5b0d5"
+        ],
+        "textColor": [
+            "#666666"
+        ],
+        "textColorDefault": true,
+        "gridColor": [
+            "#e5e5e5"
+        ],
+        "gridColorDefault": true,
+        "width": "8",
+        "height": "6",
+        "className": "",
+        "interpolation": "linear",
+        "x": 680,
+        "y": 100,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "gauge_temp",
+        "type": "ui-gauge",
+        "z": "tab_cardioia",
+        "name": "Gauge temperatura",
+        "group": "grp_amb",
+        "order": 1,
+        "value": "payload",
+        "valueType": "msg",
+        "width": "4",
+        "height": "3",
+        "gtype": "gauge-half",
+        "gstyle": "needle",
+        "title": "Temperatura corporal",
+        "alwaysShowTitle": true,
+        "floatingTitlePosition": "top-left",
+        "units": "°C",
+        "icon": "",
+        "prefix": "",
+        "suffix": "",
+        "segments": [
+            {
+                "from": "34",
+                "color": "#1565c0",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "35",
+                "color": "#2e7d32",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "37.5",
+                "color": "#f9a825",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "38",
+                "color": "#c62828",
+                "text": "",
+                "textType": "label"
+            }
+        ],
+        "min": "34",
+        "max": "42",
+        "sizeThickness": 16,
+        "sizeGap": 4,
+        "sizeKeyThickness": 8,
+        "styleRounded": true,
+        "styleGlow": false,
+        "className": "",
+        "x": 680,
+        "y": 140,
+        "wires": []
+    },
+    {
+        "id": "gauge_umid",
+        "type": "ui-gauge",
+        "z": "tab_cardioia",
+        "name": "Gauge umidade",
+        "group": "grp_amb",
+        "order": 2,
+        "value": "payload",
+        "valueType": "msg",
+        "width": "4",
+        "height": "3",
+        "gtype": "gauge-half",
+        "gstyle": "rounded",
+        "title": "Umidade (contexto, sem alerta)",
+        "alwaysShowTitle": true,
+        "floatingTitlePosition": "top-left",
+        "units": "%",
+        "icon": "",
+        "prefix": "",
+        "suffix": "",
+        "segments": [
+            {
+                "from": "0",
+                "color": "#90a4ae",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "30",
+                "color": "#1565c0",
+                "text": "",
+                "textType": "label"
+            },
+            {
+                "from": "70",
+                "color": "#90a4ae",
+                "text": "",
+                "textType": "label"
+            }
+        ],
+        "min": "0",
+        "max": "100",
+        "sizeThickness": 16,
+        "sizeGap": 4,
+        "sizeKeyThickness": 8,
+        "styleRounded": true,
+        "styleGlow": false,
+        "className": "",
+        "x": 680,
+        "y": 180,
+        "wires": []
+    },
+    {
+        "id": "fn_avalia",
+        "type": "function",
+        "z": "tab_cardioia",
+        "name": "avalia alerta (limiares)",
+        "func": "// Limiares de alerta — os mesmos do firmware (defesa em profundidade:\n// o ESP32 classifica para decidir o que preservar no buffer, e o\n// Node-RED reavalia para não depender de um único ponto).\nconst LIMIARES = {\n    BPM_TAQUICARDIA: 120,   // > 120 bpm\n    BPM_BRADICARDIA: 50,    // < 50 bpm\n    TEMP_FEBRE: 38.0,       // > 38,0 °C\n    TEMP_HIPOTERMIA: 35.0   // < 35,0 °C\n};\nconst p = msg.payload;\nconst motivos = [];\nif (p.bpm > LIMIARES.BPM_TAQUICARDIA) motivos.push('taquicardia');\nif (p.bpm < LIMIARES.BPM_BRADICARDIA) motivos.push('bradicardia');\nif (p.temp !== null && p.temp > LIMIARES.TEMP_FEBRE) motivos.push('febre');\nif (p.temp !== null && p.temp < LIMIARES.TEMP_HIPOTERMIA) motivos.push('hipotermia');\n\nconst alerta = motivos.length > 0;\nif (alerta !== p.alerta) {\n    node.warn(`Divergência ESP32 x Node-RED na seq ${p.seq}: esp32=${p.alerta} node-red=${alerta}`);\n}\nmsg.payload = { ...p, alerta, motivo: motivos.join('+') };\nreturn msg;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 260,
+        "wires": [
+            [
+                "fn_estado",
+                "fn_notifica",
+                "dbg_alertas"
+            ]
+        ]
+    },
+    {
+        "id": "fn_estado",
+        "type": "function",
+        "z": "tab_cardioia",
+        "name": "só a leitura mais recente",
+        "func": "// O painel de estado acompanha só a leitura mais recente\nreturn msg.maisRecente ? msg : null;",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 260,
+        "wires": [
+            [
+                "tpl_estado"
+            ]
+        ]
+    },
+    {
+        "id": "tpl_estado",
+        "type": "ui-template",
+        "z": "tab_cardioia",
+        "group": "grp_estado",
+        "page": "",
+        "ui": "",
+        "name": "Estado do paciente",
+        "order": 1,
+        "width": "0",
+        "height": "0",
+        "head": "",
+        "format": "<template>\n  <div v-if=\"msg && msg.payload\" :class=\"['estado', msg.payload.alerta ? 'alerta' : 'normal']\">\n    <div class=\"titulo\">{{ msg.payload.alerta ? 'ALERTA — ' + msg.payload.motivo : 'Sinais vitais normais' }}</div>\n    <div class=\"valores\">{{ msg.payload.bpm }} bpm · {{ msg.payload.temp ?? '—' }} °C · {{ msg.payload.umid ?? '—' }}% umidade</div>\n    <div class=\"meta\">\n      Leitura #{{ msg.payload.seq }} às {{ new Date(msg.payload.ts).toLocaleTimeString('pt-BR') }}\n      · {{ msg.payload.origem === 'buffer' ? 'veio do buffer offline' : 'tempo real' }}\n    </div>\n  </div>\n  <div v-else class=\"estado vazio\">Aguardando a primeira leitura do ESP32…</div>\n</template>\n\n<style scoped>\n.estado { border-radius: 8px; padding: 16px 20px; color: #fff; }\n.estado.normal { background: #1e7a46; }\n.estado.alerta { background: #c62828; }\n.estado.vazio { background: #eceff1; color: #455a64; }\n.titulo { font-size: 1.5rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; }\n.valores { font-size: 1.15rem; margin-top: 6px; }\n.meta { font-size: .85rem; opacity: .85; margin-top: 6px; }\n</style>",
+        "storeOutMessages": true,
+        "passthru": false,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 880,
+        "y": 260,
+        "wires": [
+            []
+        ]
+    },
+    {
+        "id": "fn_notifica",
+        "type": "function",
+        "z": "tab_cardioia",
+        "name": "quando notificar",
+        "func": "// Decide quando avisar a equipe, sem notificar a cada 2 segundos:\n// - tempo real: só quando o estado muda (entrou em alerta / normalizou);\n// - buffer: junta os alertas que ocorreram offline e avisa uma vez, no\n//   último registro da sincronização (buffer_pendente = 0).\nconst p = msg.payload;\nconst hora = new Date(p.ts).toLocaleTimeString('pt-BR');\n\nif (p.origem === 'buffer') {\n    const offline = flow.get('alertasOffline') || [];\n    if (p.alerta) offline.push(`${hora} ${p.motivo}`);\n    flow.set('alertasOffline', offline);\n    if (p.buffer_pendente !== 0) return null;\n    flow.set('alertasOffline', []);\n    if (!offline.length) return null;\n    return {\n        payload: `Sincronização: ${offline.length} alerta(s) ocorreram durante a queda de conexão (primeiro às ${offline[0]})`,\n        ui_update: { color: 'orange', displayTime: 15 }\n    };\n}\n\nconst anterior = flow.get('motivoAnterior') ?? '';\nif (p.motivo === anterior) return null;\nflow.set('motivoAnterior', p.motivo);\nif (p.alerta) {\n    return {\n        payload: `ALERTA — ${p.motivo} (${p.bpm} bpm, ${p.temp ?? '—'} °C) às ${hora}`,\n        ui_update: { color: 'red', displayTime: 15 }\n    };\n}\nreturn { payload: `Paciente voltou à faixa normal às ${hora}`, ui_update: { color: 'green', displayTime: 6 } };",
+        "outputs": 1,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 640,
+        "y": 320,
+        "wires": [
+            [
+                "ui_notif"
+            ]
+        ]
+    },
+    {
+        "id": "ui_notif",
+        "type": "ui-notification",
+        "z": "tab_cardioia",
+        "ui": "ui_base",
+        "position": "top right",
+        "colorDefault": false,
+        "color": "#c62828",
+        "displayTime": "10",
+        "showCountdown": true,
+        "outputs": 0,
+        "allowDismiss": true,
+        "dismissText": "Fechar",
+        "allowConfirm": false,
+        "confirmText": "Confirmar",
+        "raw": false,
+        "className": "",
+        "name": "Notificação de alerta",
+        "x": 880,
+        "y": 320,
+        "wires": []
+    },
+    {
+        "id": "dbg_leituras",
+        "type": "debug",
+        "z": "tab_cardioia",
+        "name": "leituras (bruto)",
+        "active": true,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 370,
+        "y": 80,
+        "wires": []
+    },
+    {
+        "id": "dbg_alertas",
+        "type": "debug",
+        "z": "tab_cardioia",
+        "name": "avaliação",
+        "active": false,
+        "tosidebar": true,
+        "console": false,
+        "tostatus": false,
+        "complete": "payload",
+        "targetType": "msg",
+        "statusVal": "",
+        "statusType": "auto",
+        "x": 640,
+        "y": 380,
+        "wires": []
+    },
+    {
+        "id": "cmt_2",
+        "type": "comment",
+        "z": "tab_cardioia",
+        "name": "Status do dispositivo (retained + Last Will)",
+        "info": "",
+        "x": 300,
+        "y": 460,
+        "wires": []
+    },
+    {
+        "id": "in_status",
+        "type": "mqtt in",
+        "z": "tab_cardioia",
+        "name": "status",
+        "topic": "cardioia/fase3/g568457/paciente/+/status",
+        "qos": "0",
+        "datatype": "json",
+        "broker": "broker_hivemq",
+        "nl": false,
+        "rap": true,
+        "rh": 0,
+        "inputs": 0,
+        "x": 120,
+        "y": 520,
+        "wires": [
+            [
+                "fn_disp"
+            ]
+        ]
+    },
+    {
+        "id": "fn_disp",
+        "type": "function",
+        "z": "tab_cardioia",
+        "name": "status do dispositivo",
+        "func": "// Status do ESP32 (retained + Last Will): online, ocupação do buffer e\n// descartes. Junta o contador de leituras sincronizadas que o Node-RED recebeu.\nconst s = msg.payload;\nif (!s || typeof s !== 'object') return null;\nconst painel = { payload: { ...s, sincronizadas: flow.get('sincronizadas') || 0, recebido: Date.now() } };\n\nconst estavaOnline = flow.get('dispositivoOnline');\nflow.set('dispositivoOnline', s.online);\nlet aviso = null;\nif (estavaOnline !== undefined && estavaOnline !== s.online) {\n    aviso = s.online\n        ? { payload: `ESP32 de volta online (${s.buffer} leitura(s) no buffer para sincronizar)`, ui_update: { color: 'blue', displayTime: 6 } }\n        : { payload: 'ESP32 offline — as leituras ficam no buffer local até a conexão voltar', ui_update: { color: 'orange', displayTime: 10 } };\n}\nreturn [painel, aviso];",
+        "outputs": 2,
+        "timeout": 0,
+        "noerr": 0,
+        "initialize": "",
+        "finalize": "",
+        "libs": [],
+        "x": 370,
+        "y": 520,
+        "wires": [
+            [
+                "tpl_disp"
+            ],
+            [
+                "ui_notif"
+            ]
+        ]
+    },
+    {
+        "id": "tpl_disp",
+        "type": "ui-template",
+        "z": "tab_cardioia",
+        "group": "grp_disp",
+        "page": "",
+        "ui": "",
+        "name": "Dispositivo",
+        "order": 1,
+        "width": "0",
+        "height": "0",
+        "head": "",
+        "format": "<template>\n  <div v-if=\"msg && msg.payload\" class=\"disp\">\n    <div :class=\"['linha', 'online', msg.payload.online ? 'on' : 'off']\">\n      {{ msg.payload.online ? 'ONLINE' : 'OFFLINE' }}<span v-if=\"msg.payload.motivo === 'lwt'\"> (queda detectada pelo broker — Last Will)</span>\n    </div>\n    <div class=\"linha\"><span>Buffer local</span><b>{{ msg.payload.buffer ?? 0 }} / {{ msg.payload.capacidade ?? '—' }}</b></div>\n    <div class=\"linha\"><span>Sincronizadas do buffer</span><b>{{ msg.payload.sincronizadas }}</b></div>\n    <div class=\"linha\"><span>Descartadas (normais / alertas)</span><b>{{ msg.payload.descartadas_normais ?? 0 }} / {{ msg.payload.descartadas_alertas ?? 0 }}</b></div>\n    <div class=\"linha\"><span>Falhas do DHT22</span><b>{{ msg.payload.erros_sensor ?? 0 }}</b></div>\n    <div class=\"linha\"><span>Ligado há</span><b>{{ msg.payload.uptime_s != null ? msg.payload.uptime_s + ' s' : '—' }}</b></div>\n  </div>\n  <div v-else class=\"disp vazio\">Sem status do dispositivo ainda.</div>\n</template>\n\n<style scoped>\n.disp { display: flex; flex-direction: column; gap: 6px; }\n.linha { display: flex; justify-content: space-between; gap: 12px; font-size: .95rem; }\n.online { font-weight: 700; padding: 6px 10px; border-radius: 6px; color: #fff; justify-content: flex-start; }\n.online.on { background: #1565c0; }\n.online.off { background: #ef6c00; }\n.vazio { color: #607d8b; }\n</style>",
+        "storeOutMessages": true,
+        "passthru": false,
+        "resendOnRefresh": true,
+        "templateScope": "local",
+        "className": "",
+        "x": 640,
+        "y": 520,
+        "wires": [
+            []
+        ]
+    }
+]

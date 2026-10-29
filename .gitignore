@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+.env
+esp32/build/
+esp32/build_teste/
+docs/*.tmp.html
+esp32/cardioia_monitor/build/

@@ -1,0 +1,4 @@
+[wokwi]
+version = 1
+firmware = 'build/cardioia_monitor.ino.bin'
+elf = 'build/cardioia_monitor.ino.elf'

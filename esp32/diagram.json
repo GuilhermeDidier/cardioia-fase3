@@ -1,0 +1,34 @@
+{
+  "version": 1,
+  "author": "CardioIA - Fase 3",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "wokwi-esp32-devkit-v1", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht1", "top": -105.3, "left": -120.6, "attrs": { "temperature": "36.5", "humidity": "45" } },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": -110, "left": 140, "attrs": { "value": "300" } },
+    { "type": "wokwi-pushbutton", "id": "btn_wifi", "top": 160, "left": -170, "attrs": { "color": "blue", "label": "Wi-Fi", "bounce": "0" } },
+    { "type": "wokwi-led", "id": "led_wifi", "top": 30, "left": 200, "attrs": { "color": "blue", "label": "WIFI" } },
+    { "type": "wokwi-resistor", "id": "r1", "top": 110, "left": 170, "rotate": 90, "attrs": { "value": "220" } },
+    { "type": "wokwi-led", "id": "led_alerta", "top": 30, "left": 260, "attrs": { "color": "red", "label": "ALERTA" } },
+    { "type": "wokwi-resistor", "id": "r2", "top": 110, "left": 230, "rotate": 90, "attrs": { "value": "220" } }
+  ],
+  "connections": [
+    [ "esp:TX0", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX0", "$serialMonitor:TX", "", [] ],
+    [ "dht1:VCC", "esp:3V3", "red", [] ],
+    [ "dht1:GND", "esp:GND.1", "black", [] ],
+    [ "dht1:SDA", "esp:D15", "green", [] ],
+    [ "pot1:VCC", "esp:3V3", "red", [] ],
+    [ "pot1:GND", "esp:GND.1", "black", [] ],
+    [ "pot1:SIG", "esp:D34", "orange", [] ],
+    [ "btn_wifi:1.l", "esp:D4", "blue", [] ],
+    [ "btn_wifi:2.l", "esp:GND.2", "black", [] ],
+    [ "esp:D26", "r1:1", "blue", [] ],
+    [ "r1:2", "led_wifi:A", "blue", [] ],
+    [ "led_wifi:C", "esp:GND.1", "black", [] ],
+    [ "esp:D27", "r2:1", "red", [] ],
+    [ "r2:2", "led_alerta:A", "red", [] ],
+    [ "led_alerta:C", "esp:GND.1", "black", [] ]
+  ],
+  "dependencies": {}
+}

@@ -1,0 +1,65 @@
+[BOOT] CardioIA Fase 3 | paciente=P001 | modo=SERIAL | buffer=8 leituras (16s offline) | leitura a cada 2s
+[BOOT] alertas: bpm>120 ou bpm<50, temp>38.0C ou temp<35.0C
+[LEITURA] seq=1 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[NUVEM] {"paciente":"P001","seq":1,"idade_ms":0,"temp":36.6,"umid":45,"bpm":74,"alerta":false,"motivo":"","origem":"tempo_real","buffer_pendente":0}
+[LEITURA] seq=2 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[NUVEM] {"paciente":"P001","seq":2,"idade_ms":0,"temp":36.6,"umid":45,"bpm":74,"alerta":false,"motivo":"","origem":"tempo_real","buffer_pendente":0}
+[WIFI] simulado: DESLIGADO
+[LEITURA] seq=3 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[OFFLINE] armazenada localmente (1/8)
+[LEITURA] seq=4 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[OFFLINE] armazenada localmente (2/8)
+[LEITURA] seq=5 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[OFFLINE] armazenada localmente (3/8)
+[LEITURA] seq=6 temp=36.6C umid=45% bpm=176 estado=ALERTA
+[ALERTA] taquicardia (bpm=176 temp=36.6C)
+[OFFLINE] armazenada localmente (4/8)
+[LEITURA] seq=7 temp=36.6C umid=45% bpm=176 estado=ALERTA
+[ALERTA] taquicardia (bpm=176 temp=36.6C)
+[OFFLINE] armazenada localmente (5/8)
+[LEITURA] seq=8 temp=36.6C umid=45% bpm=176 estado=ALERTA
+[ALERTA] taquicardia (bpm=176 temp=36.6C)
+[OFFLINE] armazenada localmente (6/8)
+[LEITURA] seq=9 temp=38.6C umid=45% bpm=74 estado=ALERTA
+[ALERTA] febre (bpm=74 temp=38.6C)
+[OFFLINE] armazenada localmente (7/8)
+[LEITURA] seq=10 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[OFFLINE] armazenada localmente (8/8)
+[LEITURA] seq=11 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[BUFFER] cheio (8/8): descartada leitura NORMAL seq=3; alertas preservados=4
+[OFFLINE] armazenada localmente (8/8)
+[LEITURA] seq=12 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[BUFFER] cheio (8/8): descartada leitura NORMAL seq=4; alertas preservados=4
+[OFFLINE] armazenada localmente (8/8)
+[LEITURA] seq=13 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[BUFFER] cheio (8/8): descartada leitura NORMAL seq=5; alertas preservados=4
+[OFFLINE] armazenada localmente (8/8)
+[LEITURA] seq=14 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[BUFFER] cheio (8/8): descartada leitura NORMAL seq=10; alertas preservados=4
+[OFFLINE] armazenada localmente (8/8)
+[LEITURA] seq=15 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[BUFFER] cheio (8/8): descartada leitura NORMAL seq=11; alertas preservados=4
+[OFFLINE] armazenada localmente (8/8)
+[LEITURA] seq=16 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[BUFFER] cheio (8/8): descartada leitura NORMAL seq=12; alertas preservados=4
+[OFFLINE] armazenada localmente (8/8)
+[WIFI] simulado: LIGADO
+[SYNC] iniciando: 8 pendentes
+[NUVEM] {"paciente":"P001","seq":6,"idade_ms":20310,"temp":36.6,"umid":45,"bpm":176,"alerta":true,"motivo":"taquicardia","origem":"buffer","buffer_pendente":7}
+[NUVEM] {"paciente":"P001","seq":7,"idade_ms":18310,"temp":36.6,"umid":45,"bpm":176,"alerta":true,"motivo":"taquicardia","origem":"buffer","buffer_pendente":6}
+[NUVEM] {"paciente":"P001","seq":8,"idade_ms":16310,"temp":36.6,"umid":45,"bpm":176,"alerta":true,"motivo":"taquicardia","origem":"buffer","buffer_pendente":5}
+[NUVEM] {"paciente":"P001","seq":9,"idade_ms":14310,"temp":38.6,"umid":45,"bpm":74,"alerta":true,"motivo":"febre","origem":"buffer","buffer_pendente":4}
+[NUVEM] {"paciente":"P001","seq":13,"idade_ms":6310,"temp":36.6,"umid":45,"bpm":74,"alerta":false,"motivo":"","origem":"buffer","buffer_pendente":3}
+[NUVEM] {"paciente":"P001","seq":14,"idade_ms":4310,"temp":36.6,"umid":45,"bpm":74,"alerta":false,"motivo":"","origem":"buffer","buffer_pendente":2}
+[NUVEM] {"paciente":"P001","seq":15,"idade_ms":2310,"temp":36.6,"umid":45,"bpm":74,"alerta":false,"motivo":"","origem":"buffer","buffer_pendente":1}
+[NUVEM] {"paciente":"P001","seq":16,"idade_ms":310,"temp":36.6,"umid":45,"bpm":74,"alerta":false,"motivo":"","origem":"buffer","buffer_pendente":0}
+[SYNC] concluida: 8 enviadas; descartadas acumuladas: normais=6 alertas=0; buffer limpo
+[LEITURA] seq=17 temp=36.6C umid=45% bpm=74 estado=NORMAL
+[NUVEM] {"paciente":"P001","seq":17,"idade_ms":0,"temp":36.6,"umid":45,"bpm":74,"alerta":false,"motivo":"","origem":"tempo_real","buffer_pendente":0}
+
+==== VERIFICACOES ====
+alertas armazenados=4, alertas sincronizados=4
+descartadas normais=6 alertas=0, buffer final=0
+sync concluida: sim
+ordem crescente na sync: sim
+RESULTADO: PASSOU
