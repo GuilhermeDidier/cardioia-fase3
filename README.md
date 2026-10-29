@@ -4,6 +4,9 @@ Protótipo de um vestível cardíaco do projeto **CardioIA** (FIAP). Um ESP32 si
 lê temperatura e frequência cardíaca, guarda os dados quando a conexão cai, envia tudo por
 MQTT e alimenta um dashboard no Node-RED com alertas automáticos.
 
+Fases anteriores do projeto: [Fase 1 — base de dados](https://github.com/davisjr2000/cardio-ia) ·
+[Fase 2 — diagnóstico automatizado](https://github.com/GuilhermeDidier/cardioia-fase2).
+
 | Parte | Pergunta | Abordagem |
 |---|---|---|
 | **1 — Edge** | *O que acontece com os dados quando a internet cai?* | Buffer local com limite justificado; descarta leituras normais antes de alertas; sincroniza em ordem quando a conexão volta |
@@ -24,10 +27,12 @@ log em [`docs/evidencias/wokwi_serial.log`](docs/evidencias/wokwi_serial.log)):
 | Situação | Resultado |
 |---|---|
 | Alertas de taquicardia durante a queda | 4, todos preservados |
-| Leituras normais descartadas com o buffer cheio | 6 |
+| Leituras normais descartadas com o buffer cheio | 5 |
 | Alertas descartados | **0** |
 | Reconexão ao broker | 1ª tentativa |
-| Leituras sincronizadas na volta | **30**, em ordem |
+| Descartes entre a reconexão e o fim da sincronização | **0** |
+| Leituras sincronizadas na volta | **31**, em ordem (30 pendentes + 1 lida durante a sincronização) |
+| Alertas exercitados na rodada | taquicardia, bradicardia e febre |
 
 **Resiliência offline, teste automatizado** do próprio firmware ([`esp32/teste_host`](esp32/teste_host)), com buffer de 8 posições.
 
@@ -38,9 +43,11 @@ log em [`docs/evidencias/wokwi_serial.log`](docs/evidencias/wokwi_serial.log)):
 | Leituras normais descartadas | 6 |
 | Alertas descartados | **0** |
 | Ordem cronológica na sincronização | preservada |
+| Reconexão no mesmo ciclo de uma leitura | nenhuma leitura descartada |
 | Mesmo teste com a política sabotada ("descarta a mais antiga") | **falha**: só 1 de 4 alertas sobrevive |
+| Mesmo teste com a versão anterior (lia antes de sincronizar) | **falha**: descarta 1 leitura ao reconectar |
 
-**Firmware** (`arduino-cli`, placa DOIT ESP32 DevKit v1): compila sem erros. Usa 69% da
+**Firmware** (`arduino-cli`, placa DOIT ESP32 DevKit v1): compila sem erros nem warnings (`--warnings all`). Usa 69% da
 flash e 14% da RAM com MQTT; o buffer de produção (1800 leituras = 1 h offline) ocupa
 28,8 KB.
 
@@ -52,8 +59,8 @@ buffer e resume em uma notificação os alertas que aconteceram durante a queda.
 | ![Offline](docs/img/dashboard_offline.png) | ![Sincronização](docs/img/dashboard_sincronizacao.png) |
 
 > Prints da mesma rodada: o ESP32 do Wokwi publicando no HiveMQ e o Node-RED local recebendo.
-> No gráfico da direita, o 2º pico é a taquicardia que aconteceu **durante a queda**, enviada
-> do buffer e colocada no horário em que foi medida.
+> No gráfico da direita, o pico depois da febre é a taquicardia que aconteceu **durante a
+> queda**, enviada do buffer e colocada no horário em que foi medida.
 
 ## Como rodar
 
@@ -61,10 +68,16 @@ buffer e resume em uma notificação os alertas que aconteceram durante a queda.
 
 - `[MQTT] conectado` → o dispositivo está publicando;
 - botão azul **Wi-Fi** → alterna online/offline (veja `[OFFLINE]`, `[BUFFER] cheio`, `[SYNC] concluida`);
-- potenciômetro → BPM de 40 a 180 (acima de 120 dispara `[ALERTA] taquicardia`);
+- potenciômetro → BPM de 40 a 180 (acima de 120 dispara `[ALERTA] taquicardia`, abaixo de 50 `[ALERTA] bradicardia`);
 - clique no DHT22 → ajuste a temperatura (acima de 38 °C dispara `[ALERTA] febre`).
 
 Para montar o projeto do zero: crie um ESP32 no wokwi.com e cole `esp32/cardioia_monitor/cardioia_monitor.ino` (como `sketch.ino`), `esp32/diagram.json` e `esp32/libraries.txt`.
+
+Para simular no VS Code (extensão Wokwi), compile antes, porque o `esp32/wokwi.toml` aponta para o firmware em `esp32/build/`:
+
+```bash
+arduino-cli compile --fqbn esp32:esp32:esp32doit-devkit-v1 --output-dir esp32/build esp32/cardioia_monitor
+```
 
 **2. Node-RED + dashboard** (Node.js 22.9 ou mais novo, exigência do Node-RED 5):
 
@@ -78,6 +91,10 @@ npm start
 
 O flow (`node-red/flows.json`) é carregado automaticamente. Para usar em outro Node-RED:
 menu → Import → selecione o arquivo e instale `@flowfuse/node-red-dashboard` pela paleta.
+
+Por segurança, o Node-RED só aceita conexões da própria máquina (`uiHost: "127.0.0.1"` em
+`node-red/settings.js`), porque o editor não tem login. Para abrir o dashboard pelo celular na
+mesma rede, troque para `"0.0.0.0"` só durante a demonstração.
 
 **3. Sem Wokwi (opcional):** simulador do ESP32 e teste do firmware no computador.
 
@@ -93,6 +110,7 @@ esp32/teste_host/rodar.sh                                   # precisa de arduino
 esp32/
   cardioia_monitor/cardioia_monitor.ino   firmware C++ comentado
   diagram.json, libraries.txt             circuito e bibliotecas do Wokwi
+  wokwi.toml                              simulação pela extensão Wokwi do VS Code
   teste_host/                             teste da resiliência rodando o .ino no computador
 node-red/
   flows.json                              flow exportado (MQTT → dashboard + alertas)
@@ -100,6 +118,7 @@ node-red/
 tools/
   simulador_esp32.py                      publica o mesmo payload do ESP32 (teste)
   screenshots.py                          prints do dashboard/editor (Playwright)
+  md_para_pdf.py                          gera os PDFs dos relatórios
 docs/
   relatorio_parte1_edge.md / .pdf
   relatorio_parte2_fog_cloud.md / .pdf

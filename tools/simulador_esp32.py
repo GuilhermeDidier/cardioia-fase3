@@ -44,6 +44,7 @@ class Esp32Simulado:
         self.cliente = cliente
         self.seq = 0
         self.buffer = []          # leituras guardadas enquanto "offline"
+        self.sincronizadas = 0
         self.inicio = time.monotonic()
 
     def ler(self, alerta=False):
@@ -77,7 +78,8 @@ class Esp32Simulado:
 
     def status(self, online):
         payload = {"online": online, "buffer": len(self.buffer), "capacidade": 30,
-                   "descartadas_normais": 0, "descartadas_alertas": 0, "erros_sensor": 0,
+                   "descartadas_normais": 0, "descartadas_alertas": 0,
+                   "sincronizadas": self.sincronizadas, "erros_sensor": 0,
                    "uptime_s": int(time.monotonic() - self.inicio)}
         self.cliente.publish(f"{BASE}/status", json.dumps(payload), retain=True)
         print(f"[STATUS] {payload}")
@@ -97,6 +99,7 @@ class Esp32Simulado:
         while self.buffer:
             leitura = self.buffer.pop(0)
             self.enviar(leitura, "buffer", len(self.buffer))
+            self.sincronizadas += 1
             time.sleep(0.05)
         print("[SYNC] concluida")
 

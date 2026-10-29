@@ -129,16 +129,17 @@ flow está em `node-red/flows.json`, e as instruções para importar estão no R
 | Nó | Tipo | O que faz |
 |---|---|---|
 | `leituras` | mqtt in | Assina `.../P001/leituras` e converte o JSON |
-| `normaliza (horário + série)` | function | Calcula o horário real (`agora − idade_ms`), conta as leituras vindas do buffer e mantém a série de BPM ordenada por horário |
+| `normaliza (horário + série)` | function | Valida a mensagem, calcula o horário real (`agora − idade_ms`, descartando `idade_ms` negativa ou inválida), mantém a série de BPM ordenada por horário e marca lacunas acima de 6 s |
 | `Gráfico BPM` | ui-chart | Linha, eixo X em tempo, janela de 15 min |
-| `Gauge temperatura` | ui-gauge | Meia-lua de 34 a 42 °C. Faixas: azul < 35, verde 35–37,5, amarelo 37,5–38, vermelho > 38 |
-| `Gauge umidade` | ui-gauge | 0–100 %, só contexto |
+| `Gauge temperatura` | ui-gauge | Meia-lua de 34 a 42 °C. Faixas: azul < 35, verde 35–37,5, amarelo 37,5–38, vermelho > 38. Se o DHT22 falhar, o título passa a dizer "sem leitura" |
+| `Gauge umidade` | ui-gauge | 0–100 %, só contexto (mesmo aviso de "sem leitura") |
 | `avalia alerta (limiares)` | function | Reaplica os limiares (120/50 bpm, 38/35 °C) e avisa se discordar do ESP32 |
 | `só a leitura mais recente` | function | Impede que uma leitura antiga, chegando do buffer, sobrescreva o estado atual |
 | `Estado do paciente` | ui-template | Faixa verde "Sinais vitais normais" ou vermelha "ALERTA — taquicardia" |
 | `quando notificar` | function | Avisa só quando o estado muda e resume em uma notificação os alertas ocorridos offline (se a sincronização for interrompida, o resumo sai na primeira leitura em tempo real) |
-| `Notificação de alerta` | ui-notification | Aviso vermelho (alerta), verde (normalizou) ou laranja (alertas da queda) |
-| `status` → `Dispositivo` | mqtt in → ui-template | Online/offline, ocupação do buffer, leituras sincronizadas e descartes |
+| `Notificação de alerta` | ui-notification | Canto inferior direito: vermelho (alerta), verde (normalizou) ou laranja (alertas vindos do buffer) |
+| `status` → `status do dispositivo` → `Dispositivo` | mqtt in → function → ui-template | Online/offline, ocupação do buffer, leituras sincronizadas e descartes, todos contados pelo ESP32. Depois de um Last Will, mantém os últimos números conhecidos |
+| `Notificação do dispositivo` | ui-notification | Canto inferior esquerdo: "ESP32 offline" / "de volta online" |
 
 **Decisões de configuração:**
 
@@ -151,58 +152,78 @@ flow está em `node-red/flows.json`, e as instruções para importar estão no R
   no flow, sem regravar o firmware. Se os dois discordarem, o nó gera um aviso.
 - **Notificação sem ruído.** Uma leitura a cada 2 s em taquicardia viraria 30 notificações
   por minuto. A notificação dispara só na transição normal → alerta → normal. Os alertas que
-  chegam do buffer viram **um** aviso no fim da sincronização, por exemplo: "Sincronização:
-  4 alerta(s) ocorreram durante a queda de conexão (primeiro às 17:09:02 taquicardia+febre)".
+  chegam do buffer viram **um** aviso no fim da sincronização, com a contagem por tipo
+  ("Sincronização: 4 leitura(s) em alerta vieram do buffer offline: taquicardia ×4"). No fim
+  da sincronização, o estado de referência passa a ser o da última leitura do buffer. Assim,
+  a primeira leitura em tempo real não anuncia uma mudança que já aconteceu offline.
+- **Dois cantos para dois assuntos.** O estado do paciente e o estado do dispositivo têm
+  notificações separadas, em cantos opostos da parte de baixo da tela. Antes, com um nó só,
+  o aviso "ESP32 de volta online" e o resumo da sincronização chegavam com menos de 1 s de
+  diferença, e um substituía o outro.
+- **Lacunas visíveis.** Se duas leituras consecutivas estão a mais de 6 s uma da outra
+  (3 leituras perdidas), o gráfico mostra um buraco em vez de ligar os pontos com uma reta.
+- **Horário de Brasília em tudo.** As horas das notificações (geradas no Node-RED) e as da
+  faixa de estado (geradas no navegador) usam o fuso `America/Sao_Paulo`, para não divergirem
+  se o Node-RED rodar num servidor em UTC.
 
 ### 5. Evidências
 
 Todas as imagens desta seção vêm de **uma mesma rodada, em 29/10/2026**: o ESP32 do projeto
 Wokwi publicando no `broker.hivemq.com` e o Node-RED local assinando os mesmos tópicos. O
-roteiro durou cerca de 3 minutos: operação normal, potenciômetro no máximo (taquicardia),
-DHT22 a 39 °C (febre), queda de conexão pelo botão Wi-Fi com nova taquicardia durante a queda,
-buffer cheio e volta da conexão. O log do Monitor Serial está em
-`docs/evidencias/wokwi_serial.log` e o que passou pelo broker, em
-`docs/evidencias/broker_mqtt.log`.
+roteiro durou cerca de 3 minutos:
 
-**5.1 ESP32 no Wokwi em alerta.** O potenciômetro no máximo leva o BPM a 180: o Serial mostra
-`[ALERTA] taquicardia`, cada envio sai com `"alerta":true` e o LED vermelho acende.
+1. operação normal;
+2. potenciômetro no máximo (taquicardia), no mínimo (bradicardia) e de volta ao normal;
+3. DHT22 a 39 °C (febre);
+4. queda de conexão pelo botão Wi-Fi, com nova taquicardia durante a queda;
+5. buffer cheio e volta da conexão.
 
-![Wokwi em alerta](img/wokwi_alerta.png)
+O log do Monitor Serial está em `docs/evidencias/wokwi_serial.log`, e o que passou pelo
+broker, em `docs/evidencias/broker_mqtt.log`.
 
-**5.2 Alerta no dashboard.** A mesma leitura chega ao Node-RED: a faixa fica vermelha, o
-gráfico sobe e a notificação aparece na transição para alerta.
+#### 5.1 Alertas no ESP32 e no dashboard
 
-![Dashboard em alerta](img/dashboard_alerta.png)
+O potenciômetro no máximo leva o BPM a 180. No Wokwi (à esquerda), o Serial mostra
+`[ALERTA] taquicardia`, cada envio sai com `"alerta":true` e o LED vermelho acende. A mesma
+leitura chega ao Node-RED (à direita): a faixa fica vermelha, o gráfico sobe e a notificação
+aparece no canto inferior direito, na transição para alerta.
 
-A febre (DHT22 a 39 °C) aparece do mesmo jeito, com o gauge na zona vermelha:
+<table class="fotos"><tr><td><img src="img/wokwi_alerta.png" alt="Wokwi em alerta"></td><td><img src="img/dashboard_alerta.png" alt="Dashboard em alerta"></td></tr></table>
 
-![Dashboard com febre](img/dashboard_febre.png)
+Com o potenciômetro no mínimo (40 bpm), o alerta é de bradicardia. Com o DHT22 a 39 °C, é
+de febre, e o gauge entra na zona vermelha. Três dos quatro tipos de alerta do firmware
+foram exercitados; a hipotermia segue a mesma regra da febre.
 
-A "escada" depois de cada pico no gráfico é o potenciômetro voltando: ele foi girado pelo
-teclado, uma unidade por vez, e passou por 40 bpm no caminho.
+<table class="fotos"><tr><td><img src="img/dashboard_bradicardia.png" alt="Dashboard com bradicardia"></td><td><img src="img/dashboard_febre.png" alt="Dashboard com febre"></td></tr></table>
 
-**5.3 Queda de conexão.** Com o botão Wi-Fi, o ESP32 publica `online:false` antes de
-desconectar e o painel "Dispositivo" fica laranja. No Wokwi, o LED azul apaga, as leituras
-vão para o buffer e, com ele cheio, o Serial mostra o descarte de leituras normais com os 4
-alertas preservados.
+#### 5.2 Queda de conexão
 
-![Wokwi offline com buffer cheio](img/wokwi_offline.png)
+Com o botão Wi-Fi, o ESP32 publica `online:false` antes de desconectar. O painel
+"Dispositivo" fica laranja e o aviso aparece no canto inferior esquerdo. No Wokwi, o LED azul
+apaga, as leituras vão para o buffer e, com ele cheio, o Serial mostra o descarte de leituras
+normais com os 4 alertas preservados.
 
-![Dashboard com o dispositivo offline](img/dashboard_offline.png)
+<table class="fotos"><tr><td><img src="img/wokwi_offline.png" alt="Wokwi offline com buffer cheio"></td><td><img src="img/dashboard_offline.png" alt="Dashboard com o dispositivo offline"></td></tr></table>
 
-**5.4 Volta da conexão.** O ESP32 reconecta, sincroniza as 30 leituras do buffer
-(`[SYNC] concluida: 30 enviadas; descartadas acumuladas: normais=6 alertas=0`) e volta ao
-tempo real. No dashboard, as leituras sincronizadas preenchem o buraco no horário em que
-foram medidas, incluindo o pico de taquicardia que aconteceu durante a queda. A notificação
-laranja resume os 4 alertas da queda, e o painel mostra 6 normais e 0 alertas descartados.
+#### 5.3 Volta da conexão
 
-![Wokwi depois da sincronização](img/wokwi_sync.png)
+O ESP32 reconecta e sincroniza o buffer (`[SYNC] iniciando: 30 pendentes` →
+`[SYNC] concluida: 31 enviadas; descartadas acumuladas: normais=5 alertas=0`). A 31ª é uma
+leitura feita durante a própria sincronização, que entrou no fim da fila. No dashboard, as
+leituras sincronizadas preenchem o buraco no horário em que foram medidas, incluindo o pico
+de taquicardia que aconteceu durante a queda. A notificação laranja resume os alertas que
+vieram do buffer, e o aviso azul confirma que o dispositivo voltou.
 
-![Dashboard depois da sincronização](img/dashboard_sincronizacao.png)
+O painel "Dispositivo" mostra **32** sincronizadas, e não 31: o contador é do ESP32, desde o
+boot. A leitura extra é a primeira do boot, feita antes de o MQTT conectar, que ficou no
+buffer e foi enviada assim que a conexão abriu.
+
+<table class="fotos"><tr><td><img src="img/wokwi_sync.png" alt="Wokwi depois da sincronização"></td><td><img src="img/dashboard_sincronizacao.png" alt="Dashboard depois da sincronização"></td></tr></table>
 
 O painel também funciona no celular (grade de 3 colunas abaixo de 576 px):
 `img/dashboard_celular.png`, gerado com o simulador `tools/simulador_esp32.py`, que publica o
-mesmo formato do firmware.
+mesmo formato do firmware. Para abrir de outro aparelho, é preciso trocar `uiHost` em
+`node-red/settings.js` (ver README).
 
 ### 6. Como reproduzir
 
@@ -226,3 +247,6 @@ e o dashboard começa a receber os dados.
   reiniciá-lo. Persistência fica para as próximas fases.
 - QoS 0: uma mensagem perdida entre o broker e o Node-RED não é reenviada. O `seq` mostra a
   lacuna, mas não a recupera.
+- A latência do broker público variou de menos de 1 s a alguns segundos nos testes. Numa
+  demonstração ao vivo, vale deixar um `mosquitto_sub` aberto ao lado do dashboard para
+  mostrar que a mensagem saiu do ESP32.

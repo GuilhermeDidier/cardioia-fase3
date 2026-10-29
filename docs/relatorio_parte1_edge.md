@@ -24,14 +24,16 @@ O protótipo simula esse vestível em um ESP32 no Wokwi.
 |---|---|---|
 | DHT22 | GPIO 15 | Sensor obrigatório: temperatura (usada como temperatura corporal) e umidade |
 | Potenciômetro | GPIO 34 | 2º sensor: frequência cardíaca simulada, mapeada para 40–180 bpm |
-| Botão "Wi-Fi" | GPIO 4 | Liga e desliga a conectividade simulada (variável booleana `wifiSimuladoLigado`) |
+| Botão "Wi-Fi" | GPIO 4 | Liga e desliga a conectividade simulada (variável booleana `wifiSimuladoLigado`); debounce de 50 ms em software |
 | LED azul | GPIO 26 | Aceso = online · piscando = Wi-Fi ligado, mas sem broker · apagado = offline |
 | LED vermelho | GPIO 27 | Aceso enquanto a última leitura for um alerta |
 
 **Por que um potenciômetro para o BPM:** o enunciado sugere um botão apertado *x* vezes por
 minuto. Um potenciômetro permite levar o valor a 130 bpm, ou a 45, e mostrar o alerta na
 hora, sem depender do ritmo de quem aperta. **Por que o GPIO 34:** ele pertence ao ADC1. O
-ADC2 do ESP32 fica indisponível quando o Wi-Fi está ligado.
+ADC2 do ESP32 fica indisponível quando o Wi-Fi está ligado. **O botão** fica com o *bounce*
+mecânico simulado pelo Wokwi ligado, e o firmware filtra com debounce de 50 ms: na rodada de
+testes, cada clique alternou o estado uma única vez.
 
 ### 3. Fluxo de funcionamento
 
@@ -68,7 +70,9 @@ flowchart LR
    por volta do `loop()`, para não travar a leitura dos sensores. **Cada registro só é
    apagado do buffer depois que o `publish()` é aceito pela conexão.** Se o envio falha, o
    registro fica para a próxima tentativa. Com QoS 0 não há confirmação do broker; a seção 2
-   do relatório da Parte 2 discute esse limite.
+   do relatório da Parte 2 discute esse limite. A sincronização roda **antes** da leitura
+   do ciclo: ao reconectar com o buffer cheio, ela abre espaço primeiro, e a leitura nova
+   não precisa descartar ninguém.
 
 Enquanto houver pendências, a leitura nova entra no fim da fila em vez de passar na frente.
 Assim, a nuvem recebe tudo em ordem cronológica.
@@ -76,10 +80,12 @@ Assim, a nuvem recebe tudo em ordem cronológica.
 ### 4. Lógica de resiliência
 
 **Estrutura.** É um buffer circular estático de registros de 16 bytes (sequência, instante
-da leitura, temperatura × 10, umidade, BPM e flags). Não usa alocação dinâmica, então não
-há fragmentação de heap num dispositivo que deveria rodar por semanas.
+da leitura, temperatura × 10, umidade, BPM e flags). O buffer é um vetor de tamanho fixo,
+reservado na compilação: ele não usa o heap e não fragmenta a memória num dispositivo que
+deveria rodar por semanas. A montagem de cada mensagem JSON usa o heap de forma temporária
+(ArduinoJson) e libera tudo ao fim do envio.
 
-**Limite de armazenamento e por quê.**
+#### Limite de armazenamento e por quê
 
 | Configuração | Capacidade | Autonomia offline | Memória |
 |---|---|---|---|
@@ -92,7 +98,7 @@ paciente que sai de casa para um exame. Uma ausência mais longa deixa de ser "q
 paciente) e não um buffer maior. No Wokwi usamos 30 posições para que o avaliador veja a
 política de descarte funcionando em um minuto. O valor é uma única constante no código.
 
-**Política de descarte (buffer cheio).**
+#### Política de descarte (buffer cheio)
 
 1. Sai a **leitura normal mais antiga**.
 2. **Alertas são preservados.** Um alerta só é descartado se o buffer inteiro for de alertas.
@@ -104,7 +110,9 @@ pouco (a próxima, 2 s depois, diz quase a mesma coisa), e perder o registro de 
 taquicardia custa muito. Os contadores de descarte vão para a nuvem no tópico de status.
 Assim, a equipe sabe exatamente quanto se perdeu.
 
-**Horário das leituras.** O ESP32 não tem relógio de tempo real, e sem rede não há NTP. Por
+#### Horário das leituras
+
+O ESP32 não tem relógio de tempo real, e sem rede não há NTP. Por
 isso, cada envio leva `idade_ms`, o tempo desde a leitura. Quem recebe calcula o horário
 real (`agora − idade_ms`), e as leituras que estavam no buffer aparecem no momento em que
 aconteceram.
@@ -115,44 +123,52 @@ A lógica foi testada de duas formas.
 
 **a) Teste automatizado do próprio firmware** (`esp32/teste_host/rodar.sh`). O arquivo
 `cardioia_monitor.ino` é compilado no computador com stubs mínimos do Arduino, buffer de 8
-posições e `USAR_MQTT 0`. O teste simula 40 s: 2 leituras online, queda de conexão, 3
+posições e `USAR_MQTT 0`. O teste simula ~36 s: 2 leituras online, queda de conexão, 3
 leituras normais, 3 de taquicardia, 1 de febre e 7 normais (o que estoura o buffer). Depois,
-a conexão volta. Trecho do log (completo em `docs/evidencias/teste_resiliencia_host.log`):
+a conexão volta exatamente no ciclo de uma leitura, o pior caso para a ordem do `loop()`.
+Trecho do log (completo em `docs/evidencias/teste_resiliencia_host.log`):
 
 ```text
 [BUFFER] cheio (8/8): descartada leitura NORMAL seq=3; alertas preservados=4
 ...
 [WIFI] simulado: LIGADO
 [SYNC] iniciando: 8 pendentes
-[NUVEM] {"seq":6,"idade_ms":20310,...,"bpm":176,"alerta":true,"motivo":"taquicardia","origem":"buffer","buffer_pendente":7}
+[NUVEM] {"seq":6,"idade_ms":22000,...,"bpm":176,"alerta":true,"motivo":"taquicardia","origem":"buffer","buffer_pendente":7}
 ...
 [SYNC] concluida: 8 enviadas; descartadas acumuladas: normais=6 alertas=0; buffer limpo
 ==== VERIFICACOES ====
 alertas armazenados=4, alertas sincronizados=4
+descarte depois de reconectar: nao
 RESULTADO: PASSOU
 ```
 
 Resultado: os 4 alertas chegaram à nuvem, 6 leituras normais foram descartadas e nenhum
 alerta se perdeu. A ordem cronológica foi mantida e o buffer terminou vazio. Para conferir
 que o teste detecta erro de verdade, trocamos a política por "descarta sempre a mais
-antiga". O teste falhou (só 1 dos 4 alertas sobreviveu).
+antiga". O teste falhou (só 1 dos 4 alertas sobreviveu). Ele também falha na versão
+anterior do firmware, que lia antes de sincronizar e descartava uma leitura logo depois de
+reconectar.
 
 **b) Simulação no Wokwi** (projeto em modo demo, buffer de 30). Com o botão Wi-Fi desligamos a
-conexão, levamos o BPM a 180 por alguns segundos (4 leituras de taquicardia) e esperamos o
-buffer encher. Trecho do Monitor Serial (completo em `docs/evidencias/wokwi_serial.log`):
+conexão, levamos o BPM a 180 por 8 segundos (4 leituras de taquicardia) e esperamos o buffer
+encher. Trecho do Monitor Serial (completo em `docs/evidencias/wokwi_serial.log`):
 
 ```text
 [WIFI] simulado: DESLIGADO
 [MQTT] desconectado (Wi-Fi simulado desligado)
 [ALERTA] taquicardia (bpm=180 temp=36.5C)          (4 vezes)
 [OFFLINE] armazenada localmente (30/30)
-[BUFFER] cheio (30/30): descartada leitura NORMAL seq=41; alertas preservados=4
-...
+[BUFFER] cheio (30/30): descartada leitura NORMAL seq=35; alertas preservados=4
+...                                                (5 normais descartadas no total)
 [WIFI] simulado: LIGADO
 [MQTT] conectado como cardioia-P001-c40a24
 [SYNC] iniciando: 30 pendentes
-[SYNC] concluida: 30 enviadas; descartadas acumuladas: normais=6 alertas=0; buffer limpo
+[SYNC] concluida: 31 enviadas; descartadas acumuladas: normais=5 alertas=0; buffer limpo
 ```
+
+Os 30 pendentes viraram 31 enviadas porque uma leitura nova foi feita no meio da
+sincronização e entrou no fim da fila, como previsto. Entre a reconexão e o fim da
+sincronização, nenhuma leitura foi descartada.
 
 ![Wokwi com o buffer cheio, LED azul apagado](img/wokwi_offline.png)
 
@@ -173,5 +189,6 @@ descarte e a sincronização não mudam.
 - O BPM vem de um potenciômetro, não de um sensor óptico. A lógica de alerta é a mesma, mas
   os valores não são fisiológicos.
 - O DHT22 mede temperatura ambiente. No protótipo, ele faz o papel de sensor de temperatura
-  corporal.
+  corporal. No Wokwi o DHT22 dispensa resistor de pull-up; num circuito real, a linha de
+  dados precisa de um pull-up de 10 kΩ para 3,3 V.
 - Este é um protótipo acadêmico, não um dispositivo médico.

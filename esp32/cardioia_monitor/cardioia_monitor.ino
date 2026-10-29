@@ -156,6 +156,7 @@ bool wifiSimuladoLigado = true;   // a "variável booleana" de conectividade ped
 bool ultimaLeituraAlerta = false;
 bool sincronizando = false;
 uint32_t enviadasNaSync = 0;
+uint32_t sincronizadasTotal = 0;   // leituras enviadas a partir do buffer desde o boot
 uint32_t proximaSeq = 1;
 uint32_t errosSensor = 0;
 uint32_t ultimaLeituraMs = 0;
@@ -273,6 +274,7 @@ void sincronizar() {
     }
     bufferRemover(0);   // "apaga o local" só depois que o publish() foi aceito (QoS 0: sem confirmação do broker)
     enviadasNaSync++;
+    sincronizadasTotal++;
   }
   if (tamanho == 0) {
     Serial.printf("[SYNC] concluida: %lu enviadas; descartadas acumuladas: normais=%lu alertas=%lu; buffer limpo\n",
@@ -288,6 +290,7 @@ void publicarStatus(bool online) {
   doc["capacidade"] = CAPACIDADE_BUFFER;
   doc["descartadas_normais"] = descartadasNormais;
   doc["descartadas_alertas"] = descartadasAlertas;
+  doc["sincronizadas"] = sincronizadasTotal;
   doc["erros_sensor"] = errosSensor;
   doc["uptime_s"] = millis() / 1000;
   char json[200];
@@ -323,6 +326,8 @@ void manterConexao() {
     if (mqtt.connected()) {
       // Desconexão limpa não dispara o Last Will, então avisa o offline antes de sair
       publicarStatus(false);
+      estadoOnlineAnterior = false;   // o loop() não precisa repetir este status
+      ultimoStatusMs = millis();
       mqtt.disconnect();
       Serial.println("[MQTT] desconectado (Wi-Fi simulado desligado)");
     }
@@ -397,6 +402,10 @@ void loop() {
 #endif
   bool online = estaOnline();
 
+  // Sincroniza antes de ler: ao reconectar com o buffer cheio, abre espaço em vez de
+  // descartar uma leitura que poderia ser enviada
+  if (online && tamanho > 0) sincronizar();
+
   if (millis() - ultimaLeituraMs >= INTERVALO_LEITURA_MS) {
     ultimaLeituraMs = millis();
     Leitura l = ler();
@@ -422,8 +431,6 @@ void loop() {
       if (!online) Serial.printf("[OFFLINE] armazenada localmente (%u/%u)\n", tamanho, CAPACIDADE_BUFFER);
     }
   }
-
-  if (online && tamanho > 0) sincronizar();
 
   if (online != estadoOnlineAnterior || millis() - ultimoStatusMs >= INTERVALO_STATUS_MS ||
       (tamanho == 0 && tamanhoAnterior > 0)) {

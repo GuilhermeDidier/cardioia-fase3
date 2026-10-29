@@ -1,5 +1,5 @@
 // Teste de host da política de resiliência (ver rodar.sh).
-// Roteiro: 2 leituras online → Wi-Fi OFF → 3 normais, 3 taquicardias, 1 febre,
+// Roteiro (~36 s simulados): 2 leituras online → Wi-Fi OFF → 3 normais, 3 taquicardias, 1 febre,
 // 7 normais (estoura o buffer de 8) → Wi-Fi ON → sincronização.
 // Esperado: os 4 alertas chegam à nuvem, só normais são descartadas, ordem preservada.
 #include "Arduino.h"
@@ -22,6 +22,9 @@ int main(){
   g_pin[PINO_BPM]=1000; g_temp=38.6; avancar(2000);
   g_temp=36.6; avancar(14000);
   std::string antes=g_serial;
+  // Religa exatamente no ciclo em que a próxima leitura vence (como no Wokwi, onde o
+  // connect() bloqueia e a reconexão cai junto de uma leitura)
+  avancar(ultimaLeituraMs + INTERVALO_LEITURA_MS - g_millis - 10);
   apertar(); avancar(3000);
   std::cout<<g_serial<<"\n==== VERIFICACOES ====\n";
   auto sync=g_serial.substr(antes.size());
@@ -31,6 +34,9 @@ int main(){
   printf("sync concluida: %s\n", sync.find("[SYNC] concluida")!=std::string::npos?"sim":"NAO");
   long last=-1; bool ordem=true; size_t p=0; while((p=sync.find("\"seq\":",p))!=std::string::npos){ long s=atol(sync.c_str()+p+6); if(s<=last) ordem=false; last=s; p+=6; }
   printf("ordem crescente na sync: %s\n", ordem?"sim":"NAO");
-  bool ok = alertasSync==4 && descartadasAlertas==0 && tamanho==0 && ordem && descartadasNormais>0;
+  // Com a conexão de volta, a sync abre espaço antes da leitura nova: nada mais é descartado
+  bool descarteAposReconectar = sync.find("[BUFFER] cheio")!=std::string::npos;
+  printf("descarte depois de reconectar: %s\n", descarteAposReconectar?"SIM":"nao");
+  bool ok = alertasSync==4 && descartadasAlertas==0 && tamanho==0 && ordem && descartadasNormais>0 && !descarteAposReconectar;
   printf("RESULTADO: %s\n", ok?"PASSOU":"FALHOU"); return ok?0:1;
 }

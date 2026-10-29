@@ -17,17 +17,21 @@ body { font-family: -apple-system, "Helvetica Neue", Arial, sans-serif; font-siz
 h1 { font-size: 19pt; margin: 0 0 2pt; color: #b71c1c; }
 h2 { font-size: 13pt; margin: 0 0 8pt; color: #444; font-weight: 600; }
 h3 { font-size: 12pt; margin: 16pt 0 6pt; border-bottom: 1px solid #ddd; padding-bottom: 2pt; }
+h4 { font-size: 10.5pt; margin: 12pt 0 4pt; }
 table { border-collapse: collapse; width: 100%; margin: 6pt 0 10pt; font-size: 9.5pt; }
 th, td { border: 1px solid #d0d7de; padding: 4pt 6pt; text-align: left; vertical-align: top; }
 th { background: #f6f8fa; }
 code { font-family: Menlo, monospace; font-size: 8.8pt; background: #f6f8fa; padding: 0 2pt; }
-pre { background: #f6f8fa; padding: 8pt; font-size: 8.3pt; white-space: pre-wrap; word-break: break-all; }
+pre { background: #f6f8fa; padding: 8pt; font-size: 8.3pt; white-space: pre-wrap; overflow-wrap: anywhere; }
 pre code { padding: 0; }
 img { max-width: 100%; max-height: 110mm; border: 1px solid #d0d7de; margin: 4pt 0; }
 .mermaid { text-align: center; margin: 8pt 0; }
 hr { border: 0; border-top: 1px solid #ddd; }
 h3, table, pre, img, .mermaid { break-inside: avoid; }
-h3 { break-after: avoid; }
+h3, h4 { break-after: avoid; }
+p:has(+ table), p:has(+ pre) { break-after: avoid; }
+table.fotos td { border: none; padding: 2pt; width: 50%; vertical-align: top; }
+table.fotos img { max-height: 95mm; }
 """
 
 
