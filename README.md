@@ -11,9 +11,10 @@ Fases anteriores do projeto: [Fase 1 — base de dados](https://github.com/davis
 |---|---|---|
 | **1 — Edge** | *O que acontece com os dados quando a internet cai?* | Buffer local com limite justificado; descarta leituras normais antes de alertas; sincroniza em ordem quando a conexão volta |
 | **2 — Fog/Cloud** | *Como a equipe de saúde vê e é avisada?* | ESP32 → MQTT (HiveMQ) → Node-RED → Dashboard 2.0 com gráfico, gauge e notificação de alerta |
+| **Ir Além 1 — REST + e-mail** | *Como automatizar o aviso à equipe?* | API REST autenticada (FastAPI) que reavalia o risco de cada leitura e manda e-mail, capturado num servidor de teste (Mailpit) |
 
 🔌 **Projeto no Wokwi:** https://wokwi.com/projects/479248832316384257
-📄 **Relatórios:** [Parte 1 — Edge](docs/relatorio_parte1_edge.pdf) · [Parte 2 — Fog/Cloud](docs/relatorio_parte2_fog_cloud.pdf)
+📄 **Relatórios:** [Parte 1 — Edge](docs/relatorio_parte1_edge.pdf) · [Parte 2 — Fog/Cloud](docs/relatorio_parte2_fog_cloud.pdf) · [Ir Além 1 — REST e e-mail](docs/relatorio_ir_alem_1_rest_email.pdf)
 
 ![Dashboard em alerta](docs/img/dashboard_alerta.png)
 
@@ -62,6 +63,16 @@ buffer e resume em uma notificação os alertas que aconteceram durante a queda.
 > No gráfico da direita, o pico depois da febre é a taquicardia que aconteceu **durante a
 > queda**, enviada do buffer e colocada no horário em que foi medida.
 
+**Ir Além 1 — API REST e e-mail:** 35 testes `pytest` passando, incluindo 401 sem chave e 403
+com o papel errado. Repassando pela API o tráfego real da rodada no Wokwi
+([`docs/evidencias/broker_mqtt.log`](docs/evidencias/broker_mqtt.log)), a API gravou 142 leituras
+e mandou 7 e-mails, na mesma sequência dos alertas do dashboard. Numa rodada ao vivo pelo
+broker, também avisou quando o paciente ficou 60 s sem dados.
+
+| Caixa de entrada da equipe (Mailpit) | Documentação da API (Swagger) |
+|---|---|
+| ![Mailpit](docs/img/api_mailpit_caixa.png) | ![Swagger](docs/img/api_swagger.png) |
+
 ## Como rodar
 
 **1. ESP32 no Wokwi:** abra o link do projeto e clique em ▶. No Monitor Serial:
@@ -104,6 +115,22 @@ python -m venv .venv && .venv/bin/pip install -r requirements.txt
 esp32/teste_host/rodar.sh                                   # precisa de arduino-cli + ArduinoJson
 ```
 
+**4. Ir Além 1 — API REST + e-mail** (a partir da raiz, com o `.venv` do passo 3):
+
+```bash
+.venv/bin/pip install -r api/requirements.txt
+docker run -d --name cardioia-mailpit -p 8025:8025 -p 1025:1025 axllent/mailpit:v1.27
+cp api/.env.exemplo api/.env        # preencha as duas chaves (o arquivo explica como gerar)
+.venv/bin/uvicorn api.app.main:criar_app --factory --port 8000
+# Swagger: http://localhost:8000/docs · caixa de e-mail: http://localhost:8025
+
+# noutro terminal: repassar o log real do ESP32, ou assinar o broker ao vivo
+.venv/bin/python -m api.cliente.ponte_mqtt --replay docs/evidencias/broker_mqtt.log
+.venv/bin/python -m api.cliente.ponte_mqtt --mqtt
+.venv/bin/python -m api.cliente.cliente_rest consultar resumo
+.venv/bin/python -m pytest api/tests
+```
+
 ## Estrutura
 
 ```
@@ -112,6 +139,10 @@ esp32/
   diagram.json, libraries.txt             circuito e bibliotecas do Wokwi
   wokwi.toml                              simulação pela extensão Wokwi do VS Code
   teste_host/                             teste da resiliência rodando o .ino no computador
+api/                                      Ir Além 1
+  app/                                    API FastAPI: rotas, auth por papel, risco, SQLite, e-mail
+  cliente/cliente_rest.py, ponte_mqtt.py  cliente REST e ponte MQTT → REST
+  tests/                                  35 testes pytest (auth, risco, leituras, e-mail, ponte)
 node-red/
   flows.json                              flow exportado (MQTT → dashboard + alertas)
   package.json, settings.js               Node-RED 5 + Dashboard 2.0
@@ -122,6 +153,7 @@ tools/
 docs/
   relatorio_parte1_edge.md / .pdf
   relatorio_parte2_fog_cloud.md / .pdf
+  relatorio_ir_alem_1_rest_email.md / .pdf
   img/, evidencias/
 ```
 
@@ -145,6 +177,10 @@ docs/
   credencial por dispositivo, LGPD).
 - **Dashboard 2.0** (`@flowfuse/node-red-dashboard`): o `node-red-dashboard` antigo está
   oficialmente sem manutenção.
+- **API com uma chave por papel** (Ir Além 1): o dispositivo só escreve e a equipe só lê. As
+  chaves ficam fora do git e a API não sobe sem elas.
+- **E-mail real num servidor de teste**: SMTP de verdade para o Mailpit, que guarda as mensagens
+  e não repassa nada à internet. Nenhum endereço real nem senha entram no projeto.
 
 ## Limites de uso
 
@@ -152,6 +188,8 @@ docs/
 - O BPM vem de um potenciômetro e a "temperatura corporal" é a temperatura ambiente do DHT22.
 - `broker.hivemq.com` é público: qualquer pessoa pode assinar os tópicos. Não use dados reais.
 - O buffer em RAM se perde se o dispositivo desligar enquanto estiver offline.
+- A API do Ir Além 1 guarda o estado das notificações em memória (zera ao reiniciar) e usa chave
+  estática: adequado ao protótipo, não à produção (ver o relatório).
 
 ## Equipe
 

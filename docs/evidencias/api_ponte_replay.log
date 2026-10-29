@@ -1,0 +1,168 @@
+[PONTE] P001 seq=1 bpm=81 origem=buffer -> normal
+[PONTE] P001 seq=2 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=3 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=4 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=5 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=6 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=7 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=8 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=9 bpm=180 origem=tempo_real -> critico taquicardia +e-mail
+[PONTE] P001 seq=10 bpm=180 origem=tempo_real -> critico taquicardia
+[PONTE] P001 seq=11 bpm=180 origem=tempo_real -> critico taquicardia
+[PONTE] P001 seq=12 bpm=180 origem=tempo_real -> critico taquicardia
+[PONTE] P001 status online=True
+[PONTE] P001 seq=13 bpm=82 origem=tempo_real -> normal +e-mail
+[PONTE] P001 seq=14 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=15 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=16 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=17 bpm=40 origem=tempo_real -> atencao bradicardia +e-mail
+[PONTE] P001 status online=True
+[PONTE] P001 seq=18 bpm=40 origem=tempo_real -> atencao bradicardia
+[PONTE] P001 seq=19 bpm=40 origem=tempo_real -> atencao bradicardia
+[PONTE] P001 seq=20 bpm=81 origem=tempo_real -> normal +e-mail
+[PONTE] P001 seq=21 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=22 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=23 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=24 bpm=81 origem=tempo_real -> atencao febre +e-mail
+[PONTE] P001 seq=25 bpm=81 origem=tempo_real -> atencao febre
+[PONTE] P001 seq=26 bpm=81 origem=tempo_real -> atencao febre
+[PONTE] P001 seq=27 bpm=81 origem=tempo_real -> normal +e-mail
+[PONTE] P001 status online=True
+[PONTE] P001 seq=28 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=29 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=30 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=31 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=32 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=33 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 seq=34 bpm=81 origem=tempo_real -> normal
+[PONTE] P001 status online=False
+[PONTE] P001 seq=40 bpm=180 origem=buffer -> critico taquicardia
+[PONTE] P001 seq=41 bpm=180 origem=buffer -> critico taquicardia
+[PONTE] P001 seq=42 bpm=180 origem=buffer -> critico taquicardia
+[PONTE] P001 seq=43 bpm=180 origem=buffer -> critico taquicardia
+[PONTE] P001 seq=44 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=45 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=46 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=47 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=48 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=49 bpm=82 origem=buffer -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=50 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=51 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=52 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=53 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=54 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=55 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=56 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=57 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=58 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=59 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=60 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=61 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=62 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=63 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=64 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=65 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=66 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=67 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=68 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=69 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=70 bpm=82 origem=buffer -> normal +e-mail
+[PONTE] P001 status online=True
+[PONTE] P001 seq=71 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=72 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=73 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=74 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=75 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=76 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=77 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=78 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=79 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=80 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=81 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=82 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=83 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=84 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=85 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=86 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=87 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=88 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=89 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=90 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=91 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=92 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=93 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=94 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=95 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=96 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=97 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=98 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=99 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=100 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=101 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=102 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=103 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=104 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=105 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=106 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=107 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=108 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=109 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=110 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=111 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=112 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=113 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=114 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=115 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=116 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=117 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=118 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=119 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=120 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=121 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=122 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=123 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=124 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=125 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=126 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=127 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=128 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=129 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=130 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=131 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=132 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=133 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=134 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=135 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=136 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=137 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=138 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=139 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=140 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=141 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=142 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=143 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=144 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=145 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 status online=True
+[PONTE] P001 seq=146 bpm=82 origem=tempo_real -> normal
+[PONTE] P001 seq=147 bpm=82 origem=tempo_real -> normal
+[PONTE] replay concluído: {'leitura': 142, 'email': 7, 'status': 25, 'alerta_duplicado': 14, 'ignorada': 1}

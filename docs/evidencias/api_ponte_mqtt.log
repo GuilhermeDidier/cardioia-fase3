@@ -1,0 +1,36 @@
+[PONTE] conectada ao broker broker.hivemq.com (código Success); assinando leituras e status
+[PONTE] P001 status online=True
+[PONTE] P001 status online=True
+[PONTE] P001 seq=1 bpm=84 origem=tempo_real -> normal
+[PONTE] P001 seq=2 bpm=77 origem=tempo_real -> normal
+[PONTE] P001 seq=3 bpm=79 origem=tempo_real -> normal
+[PONTE] P001 seq=4 bpm=83 origem=tempo_real -> normal
+[PONTE] P001 seq=5 bpm=78 origem=tempo_real -> normal
+[PONTE] P001 status online=False
+[PONTE] P001 status online=True
+[PONTE] P001 seq=6 bpm=76 origem=buffer -> normal
+[PONTE] P001 seq=7 bpm=79 origem=buffer -> normal
+[PONTE] P001 seq=8 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=9 bpm=70 origem=buffer -> normal
+[PONTE] P001 seq=10 bpm=84 origem=buffer -> normal
+[PONTE] P001 seq=11 bpm=70 origem=buffer -> normal
+[PONTE] P001 seq=12 bpm=133 origem=buffer -> critico taquicardia febre
+[PONTE] P001 seq=13 bpm=138 origem=buffer -> critico taquicardia febre
+[PONTE] P001 seq=14 bpm=136 origem=buffer -> critico taquicardia febre
+[PONTE] P001 seq=15 bpm=136 origem=buffer -> critico taquicardia febre
+[PONTE] P001 seq=16 bpm=82 origem=buffer -> normal
+[PONTE] P001 seq=17 bpm=74 origem=buffer -> normal
+[PONTE] P001 seq=18 bpm=78 origem=buffer -> normal
+[PONTE] P001 seq=19 bpm=71 origem=buffer -> normal
+[PONTE] P001 seq=20 bpm=84 origem=buffer -> normal
+[PONTE] P001 seq=21 bpm=77 origem=buffer -> normal
+[PONTE] P001 seq=22 bpm=81 origem=buffer -> normal
+[PONTE] P001 seq=23 bpm=73 origem=buffer -> normal
+[PONTE] P001 seq=24 bpm=76 origem=buffer -> normal
+[PONTE] P001 seq=25 bpm=70 origem=buffer -> normal +e-mail
+[PONTE] P001 status online=True
+[PONTE] P001 seq=26 bpm=78 origem=tempo_real -> normal
+[PONTE] P001 seq=27 bpm=78 origem=tempo_real -> normal
+[PONTE] P001 seq=28 bpm=71 origem=tempo_real -> normal
+[PONTE] P001 seq=29 bpm=73 origem=tempo_real -> normal
+[PONTE] P001 seq=30 bpm=73 origem=tempo_real -> normal

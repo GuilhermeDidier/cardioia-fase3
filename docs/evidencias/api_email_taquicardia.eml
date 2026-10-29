@@ -1,0 +1,25 @@
+Message-ID: <PZcPq9h3TQ8ynuMuG2Zvox@mailpit>
+Return-Path: <monitor@cardioia.local>
+Received: from 192.168.0.114 (unknown [192.168.65.1])
+        by 1c619913ed16 (Mailpit) with SMTP
+        for <equipe@cardioia.local>; Thu, 29 Oct 2026 22:25:17 +0000 (UTC)
+From: monitor@cardioia.local
+To: equipe@cardioia.local
+Subject: =?utf-8?b?W0NSw41USUNPXSBBTEVSVEEgdGFxdWljYXJkaWEg4oCUIFAwMDEg4oCU?=
+ 180 bpm, 36,5 =?utf-8?q?=C2=B0C?=
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 8bit
+MIME-Version: 1.0
+
+Alerta de taquicardia (nível crítico) no paciente P001 às 19:25:17.
+
+Últimas leituras:
+  hora      bpm  temp     estado
+  19:25:15   81  36,5 °C  normal
+  19:25:16   81  36,5 °C  normal
+  19:25:16   81  36,5 °C  normal
+  19:25:16   81  36,5 °C  normal
+  19:25:17   81  36,5 °C  normal
+  19:25:17  180  36,5 °C  taquicardia
+
+— CardioIA, monitoramento contínuo (mensagem automática)

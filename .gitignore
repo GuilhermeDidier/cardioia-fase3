@@ -7,3 +7,6 @@ esp32/build/
 esp32/build_teste/
 docs/*.tmp.html
 esp32/cardioia_monitor/build/
+api/.env
+api/dados/
+.pytest_cache/

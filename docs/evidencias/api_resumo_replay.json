@@ -1,0 +1,39 @@
+{
+  "paciente": "P001",
+  "ultima_leitura": {
+    "id": 142,
+    "seq": 147,
+    "recebida_em": "2026-10-29T19:25:54.383-03:00",
+    "medida_em": "2026-10-29T19:25:54.377-03:00",
+    "temp": 36.5,
+    "umid": 45,
+    "bpm": 82,
+    "origem": "tempo_real",
+    "alerta": false,
+    "motivo": "",
+    "nivel": "normal",
+    "divergencia_esp32": false
+  },
+  "estado": "normal",
+  "segundos_sem_dados": 15.6,
+  "alertas_24h": {
+    "taquicardia": 8,
+    "bradicardia": 3,
+    "febre": 3
+  },
+  "dispositivo": {
+    "recebido_em": "2026-10-29T19:25:53.954-03:00",
+    "online": true,
+    "buffer": 0,
+    "capacidade": 30,
+    "descartadas_normais": 5,
+    "descartadas_alertas": 0,
+    "sincronizadas": 32,
+    "erros_sensor": 0,
+    "uptime_s": 295
+  },
+  "emails": {
+    "enviados": 7,
+    "falharam": 0
+  }
+}
