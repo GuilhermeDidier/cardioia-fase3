@@ -62,9 +62,10 @@ repassa nada à internet. Se o SMTP cair, a leitura é gravada e a falha fica no
 
 ### 5. Evidências
 
-**Testes:** 35 testes `pytest` passando (`api_pytest.log`): autorização (401/403 em escrita e
-consulta), fronteiras dos limiares, validação, e-mails (SMTP local que captura as mensagens) e
-ponte. Sabotando a autenticação, 5 falham; sabotando a regra de não repetir e-mail, 4.
+**Testes:** 42 testes `pytest` passando (`api_pytest.log`): autorização (401/403 em escrita e
+consulta), fronteiras dos limiares, validação, e-mails (SMTP local que captura as mensagens),
+ponte e 7 casos achados na revisão de código. Sabotando a autenticação, 6 falham; sabotando a
+regra de não repetir e-mail, 4.
 
 **Log real do ESP32.** A ponte releu pela API o tráfego MQTT da rodada no Wokwi
 (`broker_mqtt.log`; o tempo fica comprimido, mas as leituras são as do ESP32): **142 leituras** e
@@ -72,9 +73,9 @@ ponte. Sabotando a autenticação, 5 falham; sabotando a regra de não repetir e
 bradicardia, normalizado, febre, normalizado, resumo da queda "taquicardia ×4"). O `GET /resumo`
 conta **8 taquicardias, 3 bradicardias e 3 febres**, como o Monitor Serial.
 
-**Ao vivo pelo broker** (`api_ponte_mqtt.log`, com o simulador no cenário de queda): 30
-leituras, um único resumo "taquicardia ×4, febre ×4" e, 60 s depois da última leitura, o e-mail
-"Sem dados do paciente P001 há 60 s".
+**Ao vivo pelo broker** (`api_ponte_mqtt.log`, simulador no cenário de queda): 28 leituras (a ponte
+conectou depois das 2 primeiras), status retido do broker ignorado, um único resumo
+"taquicardia ×4, febre ×4" e, 60 s depois da última leitura, "Sem dados do paciente P001 há 60 s".
 
 <table class="fotos"><tr><td><img src="img/api_mailpit_caixa.png" alt="Caixa do Mailpit com os 7 e-mails"></td><td><img src="img/api_mailpit_email.png" alt="E-mail crítico de taquicardia"></td></tr></table>
 

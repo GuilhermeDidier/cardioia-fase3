@@ -24,6 +24,7 @@ from .tempo import hora
 
 log = logging.getLogger("cardioia.email")
 NIVEIS = {"normal": "normal", "atencao": "atenção", "critico": "crítico"}
+Email = tuple[str, str, str, str]   # paciente, tipo, assunto, corpo
 
 
 class Notificador:
@@ -36,47 +37,48 @@ class Notificador:
         self._em_silencio: set[str] = set()
 
     # ------------------------------------------------------------------ regras
+    # A decisão (estado compartilhado) acontece sob a trava; o envio SMTP, que pode
+    # demorar até o timeout, acontece depois, para não segurar as outras leituras.
 
     def processar(self, paciente: str, leitura: dict, risco: Risco) -> bool:
         """Aplica as regras 1–3 a uma leitura já gravada. Retorna se algum e-mail saiu."""
         with self._trava:
-            self._em_silencio.discard(paciente)
-            enviados = []
-            offline = self._alertas_offline.setdefault(paciente, [])
+            emails = self._decidir(paciente, leitura, risco)
+        return any([self._enviar(*e) for e in emails])
 
-            if leitura["origem"] == "buffer":
-                if risco.alerta:
-                    offline.append((leitura["medida_em"], risco.motivo))
-                if leitura["buffer_pendente"] != 0:
-                    return False
-                # Fim da sincronização: a referência passa a ser a última leitura do buffer,
-                # para a próxima leitura em tempo real não anunciar o que já aconteceu offline
-                self._motivo_anterior[paciente] = risco.motivo
-                if offline:
-                    enviados.append(self._enviar_resumo(paciente, offline, "Sincronização"))
-                    offline.clear()
-                return any(enviados)
+    def _decidir(self, paciente: str, leitura: dict, risco: Risco) -> list[Email]:
+        self._em_silencio.discard(paciente)
+        emails: list[Email] = []
+        offline = self._alertas_offline.setdefault(paciente, [])
+        anterior = self._motivo_anterior.get(paciente, "")
 
+        if leitura["origem"] == "buffer":
+            if risco.alerta:
+                offline.append((leitura["medida_em"], risco.motivo))
+            if leitura["buffer_pendente"] != 0:
+                return emails
+            # Fim da sincronização: a referência passa a ser a última leitura do buffer,
+            # para a próxima leitura em tempo real não anunciar o que já aconteceu offline
             if offline:
-                enviados.append(self._enviar_resumo(paciente, offline, "Sincronização incompleta"))
+                emails.append(self._email_resumo(paciente, offline, "Sincronização"))
                 offline.clear()
+            if anterior and not risco.alerta:   # estava em alerta e normalizou durante a queda
+                emails.append(self._email_normalizado(paciente, leitura, " (durante a queda de conexão)"))
+            self._motivo_anterior[paciente] = risco.motivo
+            return emails
 
-            anterior = self._motivo_anterior.get(paciente, "")
-            if risco.motivo != anterior:
-                self._motivo_anterior[paciente] = risco.motivo
-                if risco.alerta:
-                    enviados.append(self._enviar_alerta(paciente, leitura, risco))
-                else:
-                    enviados.append(self._enviar(
-                        paciente, "normalizado",
-                        f"Normalizado — {paciente} — {leitura['bpm']} bpm, {_temp(leitura['temp'])}",
-                        f"O paciente {paciente} voltou à faixa normal às {hora(leitura['medida_em'])}.\n\n"
-                        + self._historico(paciente)))
-            return any(enviados)
+        if offline:
+            emails.append(self._email_resumo(paciente, offline, "Sincronização incompleta"))
+            offline.clear()
+        if risco.motivo != anterior:
+            self._motivo_anterior[paciente] = risco.motivo
+            emails.append(self._email_alerta(paciente, leitura, risco) if risco.alerta
+                          else self._email_normalizado(paciente, leitura))
+        return emails
 
     def verificar_silencio(self, agora: float) -> list[str]:
         """Regra 4. Recebe o relógio como parâmetro para ser testável sem esperar."""
-        avisados = []
+        emails: list[Email] = []
         with self._trava:
             for paciente in list(self._motivo_anterior):
                 ultima = self.repo.ultima_chegada(paciente)
@@ -85,31 +87,38 @@ class Notificador:
                 parado = agora - ultima
                 if parado > self.config.silencio_s:
                     self._em_silencio.add(paciente)
-                    self._enviar(
-                        paciente, "silencio",
-                        f"Sem dados do paciente {paciente} há {int(parado)} s",
+                    emails.append((
+                        paciente, "silencio", f"Sem dados do paciente {paciente} há {int(parado)} s",
                         f"A última leitura de {paciente} chegou às {hora(ultima)}. Pode ser queda de conexão "
                         f"(o ESP32 guarda as leituras no buffer) ou o dispositivo desligado/fora do corpo.\n"
-                        f"Verificar o paciente.")
-                    avisados.append(paciente)
-        return avisados
+                        f"Verificar o paciente."))
+        for e in emails:
+            self._enviar(*e)
+        return [e[0] for e in emails]
 
-    def conhecer(self, paciente: str):
-        """Passa a vigiar o silêncio de um paciente (chamado ao receber a 1ª leitura)."""
+    def conhecer(self, *pacientes: str):
+        """Passa a vigiar o silêncio dos pacientes (na 1ª leitura e, ao subir a API, os do banco)."""
         with self._trava:
-            self._motivo_anterior.setdefault(paciente, "")
+            for paciente in pacientes:
+                self._motivo_anterior.setdefault(paciente, "")
 
     # ------------------------------------------------------------------ e-mails
 
-    def _enviar_alerta(self, paciente: str, leitura: dict, risco: Risco) -> bool:
+    def _email_alerta(self, paciente: str, leitura: dict, risco: Risco) -> Email:
         prefixo = "[CRÍTICO] " if risco.nivel == "critico" else ""
         assunto = (f"{prefixo}ALERTA {risco.motivo.replace('+', ' + ')} — {paciente} — "
                    f"{leitura['bpm']} bpm, {_temp(leitura['temp'])}")
         corpo = (f"Alerta de {risco.motivo.replace('+', ' + ')} (nível {NIVEIS[risco.nivel]}) "
                  f"no paciente {paciente} às {hora(leitura['medida_em'])}.\n\n" + self._historico(paciente))
-        return self._enviar(paciente, "alerta", assunto, corpo)
+        return paciente, "alerta", assunto, corpo
 
-    def _enviar_resumo(self, paciente: str, alertas: list[tuple[float, str]], titulo: str) -> bool:
+    def _email_normalizado(self, paciente: str, leitura: dict, quando: str = "") -> Email:
+        assunto = f"Normalizado{quando} — {paciente} — {leitura['bpm']} bpm, {_temp(leitura['temp'])}"
+        corpo = (f"O paciente {paciente} voltou à faixa normal{quando}; leitura de "
+                 f"{hora(leitura['medida_em'])}.\n\n" + self._historico(paciente))
+        return paciente, "normalizado", assunto, corpo
+
+    def _email_resumo(self, paciente: str, alertas: list[tuple[float, str]], titulo: str) -> Email:
         contagem: dict[str, int] = {}
         for _, motivo in alertas:
             for m in motivo.split("+"):
@@ -119,7 +128,7 @@ class Notificador:
         linhas = "\n".join(f"  {hora(t)}  {m}" for t, m in alertas)
         corpo = (f"O dispositivo de {paciente} ficou sem conexão e guardou as leituras no buffer local.\n"
                  f"Ao sincronizar, {len(alertas)} delas estavam em alerta:\n\n{linhas}\n")
-        return self._enviar(paciente, "sincronizacao", assunto, corpo)
+        return paciente, "sincronizacao", assunto, corpo
 
     def _historico(self, paciente: str) -> str:
         linhas = ["Últimas leituras:", "  hora      bpm  temp     estado"]

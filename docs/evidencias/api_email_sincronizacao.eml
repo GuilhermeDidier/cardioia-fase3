@@ -1,8 +1,8 @@
-Message-ID: <fWaBrssBv2MvsxvVpatjv5@mailpit>
+Message-ID: <d4mCvmPRvg4p9p6hBqePkP@mailpit>
 Return-Path: <monitor@cardioia.local>
 Received: from 192.168.0.114 (unknown [192.168.65.1])
         by 1c619913ed16 (Mailpit) with SMTP
-        for <equipe@cardioia.local>; Thu, 29 Oct 2026 22:25:33 +0000 (UTC)
+        for <equipe@cardioia.local>; Thu, 29 Oct 2026 22:36:30 +0000 (UTC)
 From: monitor@cardioia.local
 To: equipe@cardioia.local
 Subject: =?utf-8?q?Sincroniza=C3=A7=C3=A3o=3A?= 4 leitura(s) em alerta durante
@@ -15,9 +15,9 @@ O dispositivo de P001 ficou sem conex=C3=A3o e guardou as leituras no buffer =
 local.
 Ao sincronizar, 4 delas estavam em alerta:
 
-  19:24:22  taquicardia
-  19:24:24  taquicardia
-  19:24:27  taquicardia
-  19:24:29  taquicardia
+  19:35:19  taquicardia
+  19:35:21  taquicardia
+  19:35:24  taquicardia
+  19:35:26  taquicardia
 
 =E2=80=94 CardioIA, monitoramento cont=C3=ADnuo (mensagem autom=C3=A1tica)

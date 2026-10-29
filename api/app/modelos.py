@@ -14,7 +14,7 @@ class LeituraEntrada(BaseModel):
 
     paciente: str | None = None
     seq: int = Field(ge=1)
-    idade_ms: int = Field(ge=0)
+    idade_ms: int = Field(ge=0, le=7 * 24 * 3600 * 1000)   # o buffer guarda no máximo 1 h; 7 dias é folga
     temp: float | None = Field(default=None, ge=-10, le=60)
     umid: int | None = Field(default=None, ge=0, le=100)
     bpm: int = Field(ge=0, le=300)

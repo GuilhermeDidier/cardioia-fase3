@@ -119,6 +119,16 @@ class Repositorio:
             cur = con.execute(f"INSERT INTO emails ({colunas}) VALUES ({marcadores})", tuple(campos.values()))
             return cur.lastrowid
 
+    def contar_emails(self, paciente: str) -> dict[str, int]:
+        with closing(self._conectar()) as con:
+            linhas = con.execute("SELECT status, COUNT(*) FROM emails WHERE paciente = ? GROUP BY status",
+                                 (paciente,)).fetchall()
+        return {status: n for status, n in linhas}
+
+    def pacientes(self) -> list[str]:
+        with closing(self._conectar()) as con:
+            return [p for (p,) in con.execute("SELECT DISTINCT paciente FROM leituras").fetchall()]
+
     def listar_emails(self, limite: int = 100) -> list[dict]:
         with closing(self._conectar()) as con:
             linhas = con.execute("SELECT * FROM emails ORDER BY id DESC LIMIT ?", (limite,)).fetchall()

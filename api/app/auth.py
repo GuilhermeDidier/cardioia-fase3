@@ -16,7 +16,9 @@ def exigir_papel(papel: str):
         config = request.app.state.config
         chaves = {"dispositivo": config.chave_dispositivo, "equipe": config.chave_equipe}
         # compare_digest: a comparação leva o mesmo tempo acerte ou erre
-        dono = next((p for p, c in chaves.items() if x_api_key and secrets.compare_digest(x_api_key, c)), None)
+        # bytes: compare_digest recusa str com caracteres fora do ASCII (daria erro 500, não 401)
+        recebida = (x_api_key or "").encode()
+        dono = next((p for p, c in chaves.items() if recebida and secrets.compare_digest(recebida, c.encode())), None)
         if dono is None:
             raise HTTPException(401, "Chave de API ausente ou inválida", headers={"WWW-Authenticate": "ApiKey"})
         if dono != papel:

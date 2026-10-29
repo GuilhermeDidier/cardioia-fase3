@@ -63,7 +63,7 @@ buffer e resume em uma notificação os alertas que aconteceram durante a queda.
 > No gráfico da direita, o pico depois da febre é a taquicardia que aconteceu **durante a
 > queda**, enviada do buffer e colocada no horário em que foi medida.
 
-**Ir Além 1 — API REST e e-mail:** 35 testes `pytest` passando, incluindo 401 sem chave e 403
+**Ir Além 1 — API REST e e-mail:** 42 testes `pytest` passando, incluindo 401 sem chave e 403
 com o papel errado. Repassando pela API o tráfego real da rodada no Wokwi
 ([`docs/evidencias/broker_mqtt.log`](docs/evidencias/broker_mqtt.log)), a API gravou 142 leituras
 e mandou 7 e-mails, na mesma sequência dos alertas do dashboard. Numa rodada ao vivo pelo
@@ -142,7 +142,7 @@ esp32/
 api/                                      Ir Além 1
   app/                                    API FastAPI: rotas, auth por papel, risco, SQLite, e-mail
   cliente/cliente_rest.py, ponte_mqtt.py  cliente REST e ponte MQTT → REST
-  tests/                                  35 testes pytest (auth, risco, leituras, e-mail, ponte)
+  tests/                                  42 testes pytest (auth, risco, leituras, e-mail, ponte, revisão)
 node-red/
   flows.json                              flow exportado (MQTT → dashboard + alertas)
   package.json, settings.js               Node-RED 5 + Dashboard 2.0

@@ -3,8 +3,8 @@
   "ultima_leitura": {
     "id": 142,
     "seq": 147,
-    "recebida_em": "2026-10-29T19:25:54.383-03:00",
-    "medida_em": "2026-10-29T19:25:54.377-03:00",
+    "recebida_em": "2026-10-29T19:36:49.619-03:00",
+    "medida_em": "2026-10-29T19:36:49.613-03:00",
     "temp": 36.5,
     "umid": 45,
     "bpm": 82,
@@ -15,14 +15,14 @@
     "divergencia_esp32": false
   },
   "estado": "normal",
-  "segundos_sem_dados": 15.6,
+  "segundos_sem_dados": 0.7,
   "alertas_24h": {
     "taquicardia": 8,
     "bradicardia": 3,
     "febre": 3
   },
   "dispositivo": {
-    "recebido_em": "2026-10-29T19:25:53.954-03:00",
+    "recebido_em": "2026-10-29T19:36:49.205-03:00",
     "online": true,
     "buffer": 0,
     "capacidade": 30,

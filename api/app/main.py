@@ -43,11 +43,16 @@ def criar_app(config: Config | None = None) -> FastAPI:
     repo = Repositorio(config.banco)
     repo.criar_tabelas()
     notificador = Notificador(config, repo)
+    notificador.conhecer(*repo.pacientes())   # depois de reiniciar, continua vigiando quem já mandou dados
 
     async def vigiar_silencio():
         while True:
             await asyncio.sleep(INTERVALO_SILENCIO_S)
-            await asyncio.to_thread(notificador.verificar_silencio, time.time())
+            try:
+                await asyncio.to_thread(notificador.verificar_silencio, time.time())
+            except Exception:
+                # um erro numa rodada (ex.: banco ocupado) não pode desligar a vigilância
+                log.exception("[SILENCIO] falha na verificação; nova tentativa em %ss", INTERVALO_SILENCIO_S)
 
     @asynccontextmanager
     async def ciclo_de_vida(app: FastAPI):
@@ -120,9 +125,9 @@ def criar_app(config: Config | None = None) -> FastAPI:
             raise HTTPException(404, f"Nenhuma leitura de {paciente}")
         agora = time.time()
         status = repo.ultimo_status(paciente)
+        emails = repo.contar_emails(paciente)
         if status:
             status["recebido_em"] = iso(status["recebido_em"])
-        emails = [e for e in repo.listar_emails(1000) if e["paciente"] == paciente]
         return {
             "paciente": paciente,
             "ultima_leitura": _leitura_saida(ultima),
@@ -130,8 +135,7 @@ def criar_app(config: Config | None = None) -> FastAPI:
             "segundos_sem_dados": round(agora - (repo.ultima_chegada(paciente) or agora), 1),
             "alertas_24h": repo.contar_alertas_desde(paciente, agora - 86400),
             "dispositivo": status,
-            "emails": {"enviados": sum(e["status"] == "enviado" for e in emails),
-                       "falharam": sum(e["status"] == "falhou" for e in emails)},
+            "emails": {"enviados": emails.get("enviado", 0), "falharam": emails.get("falhou", 0)},
         }
 
     @app.get("/emails", tags=["equipe"], dependencies=[equipe])

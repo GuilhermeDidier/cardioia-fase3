@@ -60,6 +60,10 @@ def repassar(topico: str, texto: str, cliente: ClienteCardioIA, contagem: Counte
     except httpx.HTTPStatusError as e:
         print(f"[PONTE] API recusou {topico}: {e.response.status_code} {e.response.text[:120]}")
         contagem["recusada"] += 1
+    except httpx.HTTPError as e:
+        # API fora do ar ou lenta: registra e segue; a ponte não pode morrer por isso
+        print(f"[PONTE] API inacessível ({type(e).__name__}); mensagem de {topico} perdida")
+        contagem["sem_api"] += 1
 
 
 def replay(caminho: str, cliente: ClienteCardioIA, intervalo: float = 0.0) -> Counter:
@@ -76,6 +80,19 @@ def replay(caminho: str, cliente: ClienteCardioIA, intervalo: float = 0.0) -> Co
     return contagem
 
 
+def tratar_mensagem(mensagem, cliente: ClienteCardioIA, contagem: Counter):
+    """Callback do paho para uma mensagem do broker."""
+    if mensagem.retain:
+        # status retido é o último que o broker guardou, talvez de horas atrás: a API o
+        # carimbaria com o horário de agora, como se fosse novo
+        print(f"[PONTE] ignorada mensagem retida em {mensagem.topic}")
+        contagem["retida"] += 1
+        return
+    texto = mensagem.payload.decode("utf-8", errors="replace")
+    if texto:
+        repassar(mensagem.topic, texto, cliente, contagem)
+
+
 def ouvir_mqtt(cliente: ClienteCardioIA, broker: str):
     import paho.mqtt.client as mqtt
 
@@ -86,9 +103,7 @@ def ouvir_mqtt(cliente: ClienteCardioIA, broker: str):
         c.subscribe([(f"{BASE}/+/leituras", 0), (f"{BASE}/+/status", 0)])
 
     def ao_receber(_c, _userdata, mensagem):
-        texto = mensagem.payload.decode("utf-8", errors="replace")
-        if texto:   # mensagem vazia = limpeza de retained
-            repassar(mensagem.topic, texto, cliente, contagem)
+        tratar_mensagem(mensagem, cliente, contagem)
 
     c = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2, client_id=f"cardioia-ponte-{os.getpid()}")
     c.on_connect = ao_conectar
